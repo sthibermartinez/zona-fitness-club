@@ -1,0 +1,2601 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: #f5f6f8;
+  color: #171717;
+}
+
+button, input, select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 255px;
+  min-width: 255px;
+  min-height: 100vh;
+  background: #101010;
+  color: white;
+  padding: 30px 18px;
+}
+
+.brand {
+  padding: 5px 10px 40px;
+}
+
+.brand h2 {
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: #fff;
+}
+
+.brand small {
+  display: block;
+  color: #aaa;
+  font-size: 10px;
+  letter-spacing: 1px;
+  margin-top: 8px;
+}
+
+.menu-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #777;
+  letter-spacing: 1.5px;
+  margin: 12px 10px 15px;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.sidebar nav button {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 9px;
+  color: #aaa;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  transition: .2s;
+}
+
+.sidebar nav button:hover {
+  background: #252525;
+  color: white;
+}
+
+.sidebar nav button.active {
+  background: #f5c400;
+  color: #111;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 35px 40px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 35px;
+}
+
+.topbar h1 {
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.avatar {
+  width: 39px;
+  height: 39px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5c400;
+  border-radius: 50%;
+  font-weight: 800;
+}
+
+.welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 28px;
+  background: #151515;
+  color: white;
+  border-radius: 15px;
+  margin-bottom: 30px;
+}
+
+.welcome h2 {
+  font-size: 21px;
+  margin-bottom: 8px;
+}
+
+.welcome p {
+  color: #aaa;
+  font-size: 12px;
+}
+
+.welcome span {
+  color: #f5c400;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.main > h3 {
+  margin-bottom: 18px;
+  font-size: 16px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 17px;
+  margin-bottom: 25px;
+}
+
+.stat-card {
+  background: white;
+  padding: 22px;
+  border: 1px solid #eee;
+  border-radius: 13px;
+  box-shadow: 0 3px 12px rgba(0,0,0,.025);
+}
+
+.stat-card p {
+  color: #888;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  margin-bottom: 14px;
+}
+
+.stat-card h2 {
+  font-size: 27px;
+  font-weight: 800;
+  margin-bottom: 7px;
+}
+
+.stat-card small {
+  color: #999;
+  font-size: 10px;
+}
+
+.content-card {
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 25px;
+  margin-bottom: 22px;
+  box-shadow: 0 3px 12px rgba(0,0,0,.025);
+}
+
+.content-card h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.content-card > p {
+  font-size: 12px;
+  color: #888;
+}
+
+.empty {
+  text-align: center;
+  padding: 35px 10px;
+  color: #999;
+  font-size: 12px;
+}
+
+.section-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.section-actions h2 {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 7px;
+}
+
+.section-actions p {
+  color: #888;
+  font-size: 12px;
+}
+
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: #f5c400;
+  color: #111;
+  border: none;
+  border-radius: 9px;
+  padding: 13px 19px;
+  font-size: 12px;
+  font-weight: 800;
+  transition: .2s;
+}
+
+.primary-button:hover {
+  background: #dfb400;
+  transform: translateY(-2px);
+}
+
+.cancel-button {
+  background: #eee;
+  color: #444;
+  border: none;
+  border-radius: 9px;
+  padding: 13px 19px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.form-card {
+  border-top: 4px solid #f5c400;
+  animation: aparecer .2s ease;
+}
+
+.form-card h3 {
+  font-size: 18px;
+}
+
+.form-card > p {
+  margin-bottom: 24px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  color: #444;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.form-grid input {
+  width: 100%;
+  height: 45px;
+  min-height: 45px;
+  padding: 0 13px;
+  border: 1px solid #e4e4e4;
+  border-radius: 8px;
+  background: #fafafa;
+  outline: none;
+  color: #222;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  transition: .2s;
+}
+
+.form-grid input:focus {
+  border-color: #e0b500;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(245,196,0,.12);
+}
+
+.form-grid input[readonly] {
+  background: #f1f1f1;
+  color: #666;
+  cursor: default;
+}
+
+/* Menús desplegables personalizados */
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 45px;
+  padding: 0 13px;
+  border: 1px solid #e4e4e4;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #222;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  transition: .2s;
+}
+
+.custom-select-trigger:hover,
+.custom-select-trigger.select-open {
+  border-color: #e0b500;
+  background: white;
+}
+
+.custom-select-trigger.select-open {
+  box-shadow: 0 0 0 3px rgba(245,196,0,.12);
+}
+
+.select-chevron {
+  color: #777;
+  transition: transform .2s;
+}
+
+.select-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.select-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: transparent;
+  cursor: default;
+}
+
+.custom-select-options {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 0;
+  z-index: 120;
+  width: 100%;
+  padding: 6px;
+  background: white;
+  border: 1px solid #ededed;
+  border-radius: 11px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.12);
+  animation: aparecer .16s ease;
+}
+
+.custom-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 11px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #444;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  transition: .15s;
+}
+
+.custom-select-option:hover {
+  background: #fff8d9;
+}
+
+.custom-select-option.option-selected {
+  background: #fff4bf;
+  color: #171717;
+  font-weight: 800;
+}
+
+.custom-select-option svg {
+  color: #b18e00;
+}
+
+/* Campo de fecha */
+.date-picker {
+  position: relative;
+  width: 100%;
+}
+
+.date-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 45px;
+  padding: 0 13px;
+  border: 1px solid #e4e4e4;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #222;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  text-align: left;
+  transition: .2s;
+}
+
+.date-input:hover,
+.date-input.date-input-open {
+  border-color: #e0b500;
+  background: white;
+}
+
+.date-input.date-input-open {
+  box-shadow: 0 0 0 3px rgba(245,196,0,.12);
+}
+
+.date-input svg {
+  color: #777;
+  flex-shrink: 0;
+}
+
+.date-value {
+  color: #222;
+}
+
+.date-placeholder {
+  color: #999;
+}
+
+/* Fondo transparente para cerrar el calendario */
+.calendar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  background: transparent;
+  cursor: default;
+}
+
+/* Calendario inspirado en iOS */
+.calendar-popup {
+  position: absolute;
+  top: calc(100% + 9px);
+  left: 0;
+  z-index: 140;
+  width: 310px;
+  padding: 17px;
+  background: rgba(255,255,255,.98);
+  border: 1px solid #ededed;
+  border-radius: 18px;
+  box-shadow: 0 15px 40px rgba(0,0,0,.16);
+  animation: aparecer .2s ease;
+  backdrop-filter: blur(15px);
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 17px;
+}
+
+.calendar-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.calendar-month-button,
+.calendar-year-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 3px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #171717;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.calendar-month-button:hover,
+.calendar-year-button:hover {
+  color: #a38300;
+}
+
+.calendar-year-button {
+  color: #888;
+  font-size: 13px;
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #f3f3f3;
+  color: #333;
+  transition: .2s;
+}
+
+.calendar-nav:hover:not(:disabled) {
+  background: #f5c400;
+  color: #111;
+}
+
+.calendar-nav:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  text-align: center;
+}
+
+.calendar-weekday {
+  padding: 8px 0;
+  color: #999;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.calendar-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #333;
+  font-size: 11px;
+  font-weight: 600;
+  transition: .15s;
+}
+
+.calendar-day:hover {
+  background: #fff3b5;
+}
+
+.calendar-day.today {
+  border: 1px solid #e0b500;
+}
+
+.calendar-day.selected {
+  background: #f5c400;
+  color: #111;
+  font-weight: 800;
+  box-shadow: 0 3px 8px rgba(245,196,0,.3);
+}
+
+/* Vista de selección rápida de mes */
+.month-selector {
+  animation: aparecer .18s ease;
+}
+
+.month-selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.month-selector-header > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.month-selector-header strong {
+  color: #171717;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.month-selector-header span {
+  color: #999;
+  font-size: 10px;
+}
+
+.year-lock {
+  padding: 6px 8px;
+  border-radius: 20px;
+  background: #fff4bf;
+  color: #8b7000 !important;
+  font-size: 9px !important;
+  font-weight: 800;
+}
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.month-option {
+  min-height: 42px;
+  padding: 7px 4px;
+  border: none;
+  border-radius: 9px;
+  background: #f5f5f5;
+  color: #555;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  transition: .18s;
+}
+
+.month-option:hover {
+  background: #fff3b5;
+  color: #171717;
+}
+
+.month-option.month-selected {
+  background: #f5c400;
+  color: #111;
+  font-weight: 800;
+  box-shadow: 0 3px 8px rgba(245,196,0,.2);
+}
+
+.calendar-footer {
+  border-top: 1px solid #eee;
+  margin-top: 15px;
+  padding-top: 12px;
+  text-align: center;
+  color: #999;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  max-width: 390px;
+  padding: 0 13px;
+  height: 43px;
+  border: 1px solid #e8e8e8;
+  border-radius: 9px;
+  color: #999;
+  margin-bottom: 22px;
+}
+
+.search-box input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  color: #333;
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 650px;
+}
+
+th {
+  padding: 15px 12px;
+  text-align: left;
+  font-size: 10px;
+  color: #999;
+  letter-spacing: .5px;
+  border-bottom: 1px solid #eee;
+}
+
+td {
+  padding: 17px 12px;
+  font-size: 12px;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+tbody tr:hover {
+  background: #fafafa;
+}
+
+.status-active,
+.status-expired {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.status-active {
+  color: #16834c;
+  background: #e7f7ed;
+}
+
+.status-expired {
+  color: #c13b3b;
+  background: #ffebeb;
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1100px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .main {
+    padding: 25px;
+  }
+}
+
+@media (max-width: 700px) {
+  .app {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    min-height: auto;
+  }
+
+  .sidebar nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .brand {
+    padding-bottom: 20px;
+  }
+
+  .main {
+    padding: 20px 15px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .welcome {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .calendar-popup {
+    width: min(310px, calc(100vw - 40px));
+  }
+}
+
+/* Botón para eliminar clientes */
+.delete-client-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  border: 1px solid #f0dada;
+  border-radius: 8px;
+  background: #fff5f5;
+  color: #c13b3b;
+  transition: .2s;
+}
+
+.delete-client-button:hover {
+  background: #c13b3b;
+  color: white;
+  border-color: #c13b3b;
+  transform: translateY(-2px);
+}
+
+/* Fondo de las ventanas */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .58);
+  backdrop-filter: blur(4px);
+  animation: modalFondo .2s ease;
+}
+
+/* Ventana principal */
+.confirmation-modal {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  padding: 32px;
+  border: 1px solid #ededed;
+  border-radius: 17px;
+  background: white;
+  text-align: center;
+  box-shadow: 0 20px 65px rgba(0, 0, 0, .2);
+  animation: modalAparecer .25s ease;
+}
+
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: #f3f3f3;
+  color: #777;
+  transition: .2s;
+}
+
+.modal-close:hover {
+  background: #e8e8e8;
+  color: #171717;
+}
+
+.modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+}
+
+.modal-icon-warning {
+  background: #fff5ce;
+  color: #b18e00;
+}
+
+.modal-icon-danger {
+  background: #ffebeb;
+  color: #c13b3b;
+}
+
+.confirmation-modal h2 {
+  margin-bottom: 11px;
+  color: #171717;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.modal-description {
+  max-width: 330px;
+  margin: 0 auto 22px;
+  color: #888;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.modal-client-info {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 23px;
+  padding: 17px;
+  border: 1px solid #ededed;
+  border-radius: 11px;
+  background: #fafafa;
+  text-align: left;
+}
+
+.modal-client-info span {
+  color: #999;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .8px;
+}
+
+.modal-client-info strong {
+  color: #171717;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.modal-client-info small {
+  color: #888;
+  font-size: 11px;
+}
+
+.modal-primary-button {
+  width: 100%;
+  min-height: 45px;
+  border: none;
+  border-radius: 9px;
+  background: #f5c400;
+  color: #111;
+  font-size: 12px;
+  font-weight: 800;
+  transition: .2s;
+}
+
+.modal-primary-button:hover {
+  background: #dfb400;
+  transform: translateY(-2px);
+}
+
+/* Botones de confirmación */
+.modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.modal-cancel-button,
+.modal-delete-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+  min-height: 45px;
+  padding: 10px;
+  border: none;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 800;
+  transition: .2s;
+}
+
+.modal-cancel-button {
+  background: #eee;
+  color: #444;
+}
+
+.modal-cancel-button:hover {
+  background: #e1e1e1;
+}
+
+.modal-delete-button {
+  background: #c13b3b;
+  color: white;
+}
+
+.modal-delete-button:hover {
+  background: #a92e2e;
+  transform: translateY(-2px);
+}
+
+@keyframes modalFondo {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalAparecer {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Ajustes para pantallas pequeñas */
+@media (max-width: 480px) {
+  .confirmation-modal {
+    padding: 27px 20px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+}
+
+/* Promociones desplegables */
+
+.promo-row {
+  cursor: pointer;
+  transition: background .2s ease;
+}
+
+.promo-row:hover {
+  background: #fafafa;
+}
+
+.promo-row-expanded {
+  background: #fffdf3;
+}
+
+.promo-name-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.promo-expand-icon {
+  color: #999;
+  flex-shrink: 0;
+  transition: transform .2s ease;
+}
+
+.promo-icon-open {
+  transform: rotate(180deg);
+  color: #b18c00;
+}
+
+.promo-row-expanded td {
+  border-bottom-color: #eadb9d;
+}
+
+.promo-edit-button {
+  width: auto;
+  min-width: 78px;
+  padding: 0 10px;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Fila desplegable de promociones */
+
+.promo-details-row td {
+  padding: 14px 18px;
+  background: #fafafa;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.promo-expanded-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  animation: aparecer .18s ease;
+}
+
+.promo-edit-expanded,
+.promo-delete-expanded {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.promo-edit-expanded {
+  background: #e7f7ed;
+  color: #16834c;
+  border: 1px solid #ccebd7;
+}
+
+.promo-edit-expanded:hover {
+  background: #16834c;
+  color: white;
+  border-color: #16834c;
+  transform: translateY(-2px);
+}
+
+.promo-delete-expanded {
+  background: #fff5f5;
+  color: #c13b3b;
+  border: 1px solid #f0dada;
+}
+
+.promo-delete-expanded:hover {
+  background: #c13b3b;
+  color: white;
+  border-color: #c13b3b;
+  transform: translateY(-2px);
+}
+
+.promo-expanded-indicator {
+  color: #888;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.status-upcoming {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 20px;
+  background: #fff5ce;
+  color: #a38300;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+@media (max-width: 700px) {
+  .promo-expanded-actions {
+    flex-wrap: wrap;
+  }
+}
+
+/* =========================================
+   REDISEÑO DE LA VENTANA DE RENOVACIÓN
+   Mantiene la identidad visual de Zona Fitness
+========================================= */
+
+.renewal-modal {
+  width: 100%;
+  max-width: 680px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 34px;
+  text-align: left;
+  scrollbar-width: thin;
+  scrollbar-color: #d5d5d5 transparent;
+}
+
+.renewal-modal .modal-icon {
+  margin: 0 auto 15px;
+}
+
+.renewal-modal > h2,
+.renewal-modal > .modal-description {
+  text-align: center;
+}
+
+.renewal-modal > h2 {
+  font-size: 21px;
+  margin-bottom: 9px;
+}
+
+.renewal-modal > .modal-description {
+  max-width: 440px;
+  margin-bottom: 27px;
+}
+
+/* Formulario de renovación */
+
+.renewal-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+  margin-top: 10px;
+}
+
+.renewal-form > label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  color: #444;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.renewal-form .custom-select,
+.renewal-form input {
+  width: 100%;
+  min-width: 0;
+}
+
+.renewal-form input {
+  height: 45px;
+  padding: 0 13px;
+  border: 1px solid #e4e4e4;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #222;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  outline: none;
+}
+
+.renewal-form input[readonly] {
+  background: #fff9df;
+  border-color: #efdf9b;
+  color: #8b7000;
+}
+
+/* Nota de pago anticipado */
+
+.renewal-note {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: -5px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #d8eddf;
+  border-radius: 9px;
+  background: #f1faf4;
+  color: #16834c;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.renewal-note svg {
+  flex-shrink: 0;
+}
+
+/* Precio destacado */
+
+.renewal-form > label:last-child {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 2px;
+}
+
+.renewal-form > label:last-child input {
+  height: 59px;
+  padding: 0 18px;
+  border: 1px solid #ead58a;
+  border-left: 4px solid #f5c400;
+  border-radius: 10px;
+  background: #fffbed;
+  color: #171717;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -.4px;
+}
+
+/* Resumen de la nueva membresía */
+
+.renewal-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  margin-top: 25px;
+  padding: 21px;
+  border: 1px solid #ededed;
+  border-radius: 12px;
+  background: #fafafa;
+}
+
+.renewal-preview h4 {
+  margin-bottom: 5px;
+  color: #222;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.renewal-preview > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  min-height: 43px;
+  padding: 11px 13px;
+  border: 1px solid #ededed;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.renewal-preview > div span {
+  color: #888;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.renewal-preview > div strong {
+  color: #222;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Botones */
+
+.renewal-modal .modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 23px;
+}
+
+.renewal-modal .modal-actions button {
+  min-height: 46px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+}
+
+/* Ajustes para pantallas medianas */
+
+@media (max-width: 700px) {
+  .renewal-modal {
+    max-width: 540px;
+    padding: 28px 23px;
+  }
+
+  .renewal-form {
+    gap: 17px;
+  }
+}
+
+/* Ajustes para celulares */
+
+@media (max-width: 480px) {
+  .modal-overlay {
+    padding: 10px;
+  }
+
+  .renewal-modal {
+    max-height: calc(100vh - 20px);
+    padding: 26px 17px 20px;
+    border-radius: 13px;
+  }
+
+  .renewal-form {
+    grid-template-columns: 1fr;
+    gap: 17px;
+  }
+
+  .renewal-form > label:last-child {
+    grid-column: auto;
+  }
+
+  .renewal-preview {
+    padding: 15px;
+    gap: 10px;
+  }
+
+  .renewal-preview > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .renewal-preview > div strong {
+    text-align: left;
+  }
+
+  .renewal-modal .modal-actions {
+    flex-direction: column-reverse;
+  }
+}
+/* =========================================
+   INICIO: VENCIMIENTOS Y RECORDATORIOS
+========================================= */
+
+.dashboard-section-title {
+  margin: 25px 0 18px;
+  font-size: 16px;
+}
+
+.reminders-card {
+  margin-top: 25px;
+}
+
+.reminders-heading,
+.settings-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.reminders-heading h3,
+.settings-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 7px;
+}
+
+.reminders-heading h3 svg,
+.settings-heading h3 svg {
+  color: #b18e00;
+}
+
+.reminders-heading p,
+.settings-heading p {
+  color: #888;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.reminder-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.reminder-item {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 17px 5px;
+  border-bottom: 1px solid #eee;
+}
+
+.reminder-item:last-child {
+  border-bottom: none;
+}
+
+.reminder-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.reminder-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  background: #fff5ce;
+  color: #9c7c00;
+}
+
+.reminder-person > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.reminder-person strong {
+  color: #222;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.reminder-person span {
+  color: #999;
+  font-size: 10px;
+}
+
+.reminder-date {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.reminder-date strong {
+  color: #333;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.reminder-date span {
+  color: #999;
+  font-size: 10px;
+}
+
+.reminder-action {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.whatsapp-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid #ccebd7;
+  border-radius: 8px;
+  background: #e7f7ed;
+  color: #16834c;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  transition: .2s;
+}
+
+.whatsapp-button:hover {
+  background: #16834c;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.reminder-status {
+  color: #999;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* =========================================
+   ACTIVIDAD RECIENTE
+========================================= */
+
+.recent-activity-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 15px;
+}
+
+.recent-activity-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.recent-activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 37px;
+  height: 37px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #fff5ce;
+  color: #9c7c00;
+}
+
+.recent-activity-item > div:nth-child(2) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.recent-activity-item strong {
+  color: #222;
+  font-size: 11px;
+}
+
+.recent-activity-item span {
+  color: #999;
+  font-size: 10px;
+}
+
+.recent-activity-item > strong:last-child {
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+/* =========================================
+   PAGOS Y CONFIGURACIÓN DE RECORDATORIOS
+========================================= */
+
+.payment-stats {
+  margin-top: 5px;
+}
+
+.reminder-settings {
+  border-top: 4px solid #f5c400;
+  animation: aparecer .2s ease;
+}
+
+.template-card {
+  padding: 19px;
+  margin-top: 15px;
+  border: 1px solid #ededed;
+  border-radius: 11px;
+  background: #fafafa;
+}
+
+.template-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 17px;
+}
+
+.template-top > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.template-top strong {
+  color: #222;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.template-top span {
+  color: #999;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+/* Interruptor */
+
+.switch-control {
+  position: relative;
+  display: inline-flex;
+  width: 43px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.switch-control input {
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 30px;
+  background: #d8d8d8;
+  transition: .2s;
+}
+
+.switch-slider::before {
+  position: absolute;
+  content: '';
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  transition: .2s;
+}
+
+.switch-control input:checked + .switch-slider {
+  background: #f5c400;
+}
+
+.switch-control input:checked + .switch-slider::before {
+  transform: translateX(19px);
+}
+
+.template-message-label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  color: #444;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.template-message-label textarea {
+  width: 100%;
+  min-height: 85px;
+  padding: 12px;
+  resize: vertical;
+  border: 1px solid #e4e4e4;
+  border-radius: 8px;
+  outline: none;
+  background: white;
+  color: #333;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  line-height: 1.7;
+  transition: .2s;
+}
+
+.template-message-label textarea:focus {
+  border-color: #e0b500;
+  box-shadow: 0 0 0 3px rgba(245,196,0,.12);
+}
+
+.template-hint {
+  display: block;
+  margin-top: 9px;
+  color: #999;
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.template-hint strong {
+  color: #8b7000;
+}
+
+.settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.settings-footer > span {
+  color: #999;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.payment-renew-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 35px;
+  padding: 0 11px;
+  border: 1px solid #ccebd7;
+  border-radius: 8px;
+  background: #e7f7ed;
+  color: #16834c;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  transition: .2s;
+}
+
+.payment-renew-button:hover {
+  background: #16834c;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.client-promo-label {
+  display: block;
+  margin-top: 5px;
+  color: #999;
+  font-size: 9px;
+}
+
+.promo-list-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.promo-list-heading h3 svg {
+  color: #a38300;
+}
+
+.promo-list-heading p {
+  margin-top: 6px;
+  color: #999;
+  font-size: 10px;
+}
+
+.membership-expanded-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px 5px;
+}
+
+.membership-history h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #222;
+  font-size: 13px;
+}
+
+.membership-history h4 svg {
+  color: #9c7c00;
+}
+
+.latest-label {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 4px 7px;
+  border-radius: 20px;
+  background: #fff4bf;
+  color: #8b7000;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+/* =========================================
+   AJUSTES RESPONSIVOS
+========================================= */
+
+@media (max-width: 900px) {
+  .reminder-item {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .reminder-action {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .reminder-status {
+    text-align: left;
+  }
+}
+
+@media (max-width: 600px) {
+  .reminders-heading,
+  .settings-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .reminder-item {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .reminder-action {
+    grid-column: auto;
+  }
+
+  .whatsapp-button {
+    width: 100%;
+  }
+
+  .settings-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-footer .primary-button {
+    width: 100%;
+  }
+
+  .template-card {
+    padding: 14px;
+  }
+
+  .recent-activity-item {
+    gap: 9px;
+  }
+
+  .recent-activity-item > strong:last-child {
+    font-size: 10px;
+  }
+}
+
+/* =========================================
+   MODO OSCURO - ZONA FITNESS CLUB
+========================================= */
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.theme-toggle {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  background: #fff;
+  color: #171717;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.theme-toggle:hover {
+  background: #f5c400;
+  border-color: #f5c400;
+  color: #171717;
+}
+
+/* Transición circular expansiva */
+
+::view-transition-old(root) {
+  animation: none;
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  animation: revelar-tema .65s ease-in-out both;
+  z-index: 2;
+}
+
+@keyframes revelar-tema {
+  from {
+    clip-path: circle(
+      0 at var(--theme-origin-x) var(--theme-origin-y)
+    );
+  }
+
+  to {
+    clip-path: circle(
+      150vmax at var(--theme-origin-x) var(--theme-origin-y)
+    );
+  }
+}
+
+/* Fondo general */
+
+.dark-mode,
+.dark-mode .main {
+  background: #151515;
+  color: #f5f5f5;
+}
+
+.dark-mode .sidebar {
+  background: #090909;
+}
+
+/* Barra superior y tarjetas */
+
+.dark-mode .topbar,
+.dark-mode .content-card,
+.dark-mode .stat-card,
+.dark-mode .form-card,
+.dark-mode .confirmation-modal,
+.dark-mode .renewal-preview,
+.dark-mode .template-card,
+.dark-mode .reminder-settings {
+  background: #222;
+  color: #f5f5f5;
+  border-color: #383838;
+}
+
+/* Textos */
+
+.dark-mode .topbar h1,
+.dark-mode .stat-card h2,
+.dark-mode .content-card h3,
+.dark-mode .section-actions h2,
+.dark-mode .membership-history h4,
+.dark-mode .confirmation-modal h2,
+.dark-mode .renewal-preview h4,
+.dark-mode .renewal-preview strong,
+.dark-mode .reminder-person strong,
+.dark-mode .reminder-date strong,
+.dark-mode .recent-activity-item strong,
+.dark-mode .template-top strong,
+.dark-mode .modal-client-info strong {
+  color: #f5f5f5;
+}
+
+.dark-mode .stat-card p,
+.dark-mode .stat-card small,
+.dark-mode .content-card > p,
+.dark-mode .section-actions p,
+.dark-mode .empty,
+.dark-mode .modal-description,
+.dark-mode .template-top span,
+.dark-mode .settings-footer > span {
+  color: #aaa;
+}
+
+/* Formularios */
+
+.dark-mode .form-grid label,
+.dark-mode .renewal-form > label,
+.dark-mode .template-message-label {
+  color: #ddd;
+}
+
+.dark-mode .form-grid input,
+.dark-mode .renewal-form input,
+.dark-mode .template-message-label textarea,
+.dark-mode .search-box input {
+  background: #2b2b2b;
+  color: #f5f5f5;
+  border-color: #444;
+}
+
+.dark-mode .form-grid input:focus,
+.dark-mode .renewal-form input:focus,
+.dark-mode .template-message-label textarea:focus {
+  background: #303030;
+  border-color: #f5c400;
+}
+
+.dark-mode .form-grid input[readonly] {
+  background: #333;
+  color: #bbb;
+}
+
+/* Búsqueda */
+
+.dark-mode .search-box {
+  background: #252525;
+  border-color: #444;
+  color: #aaa;
+}
+
+.dark-mode .search-box input {
+  border: none;
+}
+
+/* Botones secundarios */
+
+.dark-mode .cancel-button,
+.dark-mode .modal-cancel-button,
+.dark-mode .calendar-nav,
+.dark-mode .modal-close {
+  background: #353535;
+  color: #eee;
+  border-color: #484848;
+}
+
+.dark-mode .cancel-button:hover,
+.dark-mode .modal-cancel-button:hover,
+.dark-mode .modal-close:hover,
+.dark-mode .calendar-nav:hover:not(:disabled) {
+  background: #484848;
+  color: #fff;
+}
+
+/* Botón de tema */
+
+.dark-mode .theme-toggle {
+  background: #292929;
+  color: #f5c400;
+  border-color: #444;
+}
+
+.dark-mode .theme-toggle:hover {
+  background: #f5c400;
+  color: #111;
+}
+
+/* Menús desplegables */
+
+.dark-mode .custom-select-trigger,
+.dark-mode .custom-select-options {
+  background: #292929;
+  color: #f5f5f5;
+  border-color: #444;
+}
+
+.dark-mode .custom-select-trigger:hover,
+.dark-mode .custom-select-trigger.select-open {
+  background: #333;
+  border-color: #f5c400;
+}
+
+.dark-mode .custom-select-option {
+  color: #ddd;
+}
+
+.dark-mode .custom-select-option:hover {
+  background: #393325;
+  color: #fff;
+}
+
+.dark-mode .custom-select-option.option-selected {
+  background: #514719;
+  color: #f5c400;
+}
+
+/* Calendario */
+
+.dark-mode .calendar-popup {
+  background: rgba(37, 37, 37, .98);
+  border-color: #444;
+}
+
+.dark-mode .calendar-month-button,
+.dark-mode .calendar-year-button,
+.dark-mode .month-selector-header strong {
+  color: #f5f5f5;
+}
+
+.dark-mode .calendar-day {
+  color: #ddd;
+}
+
+.dark-mode .calendar-day:hover,
+.dark-mode .month-option:hover {
+  background: #40391f;
+  color: #f5c400;
+}
+
+.dark-mode .month-option {
+  background: #333;
+  color: #ddd;
+}
+
+.dark-mode .calendar-footer {
+  border-color: #444;
+}
+
+.dark-mode .date-input {
+  background: #292929;
+  color: #f5f5f5;
+  border-color: #444;
+}
+
+.dark-mode .date-input:hover,
+.dark-mode .date-input.date-input-open {
+  background: #333;
+  border-color: #f5c400;
+}
+
+.dark-mode .date-value {
+  color: #f5f5f5;
+}
+
+/* Tablas */
+
+.dark-mode table {
+  color: #eee;
+}
+
+.dark-mode th {
+  background: #292929;
+  color: #f5c400;
+  border-color: #444;
+}
+
+.dark-mode td {
+  border-color: #383838;
+}
+
+.dark-mode tbody tr:hover {
+  background: #303030;
+}
+
+/* Ventanas y modales */
+
+.dark-mode .confirmation-modal {
+  background: #242424;
+  border-color: #444;
+}
+
+.dark-mode .modal-client-info {
+  background: #2d2d2d;
+  border-color: #444;
+}
+
+.dark-mode .modal-client-info span,
+.dark-mode .modal-client-info small {
+  color: #aaa;
+}
+
+/* Renovaciones */
+
+.dark-mode .renewal-form input[readonly] {
+  background: #38321d;
+  color: #f5c400;
+  border-color: #65551b;
+}
+
+.dark-mode .renewal-form > label:last-child input {
+  background: #38321d;
+  color: #f5c400;
+  border-color: #65551b;
+}
+
+.dark-mode .renewal-preview > div {
+  background: #303030;
+  border-color: #444;
+}
+
+.dark-mode .renewal-preview > div span {
+  color: #aaa;
+}
+
+/* Recordatorios y actividad */
+
+.dark-mode .reminder-item,
+.dark-mode .recent-activity-item {
+  border-color: #383838;
+}
+
+.dark-mode .reminder-person strong,
+.dark-mode .reminder-date strong {
+  color: #eee;
+}
+
+/* Promociones */
+
+.dark-mode .promo-row:hover {
+  background: #303030;
+}
+
+.dark-mode .promo-row-expanded {
+  background: #39321b;
+}
+
+.dark-mode .promo-details-row td {
+  background: #292929;
+  border-color: #444;
+}
+
+.dark-mode .promo-edit-expanded {
+  background: #183b2a;
+  color: #70d69a;
+  border-color: #28583d;
+}
+
+.dark-mode .promo-delete-expanded,
+.dark-mode .delete-client-button {
+  background: #3a2222;
+  color: #ff8585;
+  border-color: #603333;
+}
+
+.dark-mode .promo-expanded-indicator {
+  color: #aaa;
+}
+
+/* Pagos y mensajes */
+
+.dark-mode .template-message-label textarea {
+  background: #2b2b2b;
+  color: #eee;
+}
+
+.dark-mode .latest-label {
+  background: #514719;
+  color: #f5c400;
+}
+
+/* Botón WhatsApp y renovación conservan su identidad */
+
+.dark-mode .whatsapp-button,
+.dark-mode .payment-renew-button {
+  background: #183b2a;
+  color: #70d69a;
+  border-color: #28583d;
+}
+
+/* Separadores */
+
+.dark-mode .divider {
+  border-color: #444;
+}
+
+/* Respeto por usuarios que prefieren menos movimiento */
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-new(root) {
+    animation-duration: .01ms;
+  }
+}
+/* MODO OSCURO: DESCRIPCIÓN DEL REPORTE */
+.dark-mode textarea,
+.dark-mode .template-message-label textarea {
+  background: #2b2b2b !important;
+  color: #f5f5f5 !important;
+  border-color: #444 !important;
+  caret-color: #f5c400;
+}
+
+.dark-mode textarea::placeholder {
+  color: #999 !important;
+}
+
+.dark-mode textarea:focus {
+  background: #303030 !important;
+  border-color: #f5c400 !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(245, 196, 0, 0.12);
+}
+/* INICIO DE SESIÓN */
+
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #f4f5f7;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 38px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-card h1 {
+  font-size: 23px;
+  font-weight: 800;
+  color: #111;
+}
+
+.login-card p {
+  color: #777;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.login-card label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #333;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #dedede;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.login-card input:focus {
+  border-color: #e5b400;
+}
+
+.login-card button {
+  border: 0;
+  border-radius: 8px;
+  padding: 14px;
+  background: #e5b400;
+  color: #111;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.login-card button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.login-card .login-error {
+  color: #b83227;
+  background: #fff0ee;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.auth-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #f4f5f7;
+  color: #333;
+  font-weight: 600;
+}
+
+.logout-button {
+  border: 1px solid #dedede;
+  background: transparent;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cloud-error {
+  background: #fff0ee;
+  color: #b83227;
+  padding: 10px 16px;
+  font-size: 13px;
+}
+/* MODAL DE CERRAR SESIÓN */
+
+.logout-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 9999;
+  animation: logoutFadeIn 0.2s ease;
+}
+
+.logout-modal {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.2);
+}
+
+.logout-modal-icon {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: #fff4cc;
+  color: #c99b00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logout-modal h3 {
+  color: #171717;
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.logout-modal p {
+  color: #777;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.logout-modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.logout-modal-actions button {
+  flex: 1;
+  padding: 12px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.logout-cancel {
+  background: #fff;
+  border: 1px solid #ddd;
+  color: #444;
+}
+
+.logout-confirm {
+  background: #e5b400;
+  border: 1px solid #e5b400;
+  color: #111;
+}
+
+.logout-modal-actions button:hover {
+  opacity: 0.85;
+}
+
+.dark-mode .logout-modal {
+  background: #242424;
+}
+
+.dark-mode .logout-modal h3 {
+  color: #fff;
+}
+
+.dark-mode .logout-modal p {
+  color: #bbb;
+}
+
+.dark-mode .logout-cancel {
+  background: #333;
+  border-color: #444;
+  color: #fff;
+}
+
+@keyframes logoutFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.login-card {
+  position: relative;
+}
+
+.login-theme-toggle {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #e5e5e5 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  color: #333 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  cursor: pointer;
+}
+
+.dark-mode.login-container {
+  background: #151515;
+}
+
+.dark-mode .login-card {
+  background: #242424;
+}
+
+.dark-mode .login-card h1,
+.dark-mode .login-card label {
+  color: #fff;
+}
+
+.dark-mode .login-card input {
+  background: #333;
+  border-color: #444;
+  color: #fff;
+}
+
+.dark-mode .login-theme-toggle {
+  color: #fff !important;
+  border-color: #555 !important;
+}
+/* BOTÓN CERRAR SESIÓN EN MODO OSCURO */
+
+.dark-mode .logout-button {
+  color: #fff;
+  background: #333;
+  border-color: #555;
+}
+
+.dark-mode .logout-button:hover {
+  background: #444;
+  border-color: #e5b400;
+}
+/* ENCABEZADO EN MODO OSCURO */
+
+.dark-mode .topbar {
+  border-bottom-color: #242424 !important;
+  background: #151515;
+}
+
+.dark-mode .topbar::after {
+  background: #242424 !important;
+  border-color: #242424 !important;
+}
