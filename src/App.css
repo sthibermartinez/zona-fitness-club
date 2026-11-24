@@ -2599,3 +2599,79 @@ tbody tr:hover {
   background: #242424 !important;
   border-color: #242424 !important;
 }
+
+/* MENÚ LATERAL PARA TELÉFONOS */
+@media (max-width: 700px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(285px, 85vw);
+    min-width: 0;
+    min-height: 100dvh;
+    height: 100dvh;
+    z-index: 1001;
+    overflow-y: auto;
+    transform: translateX(-105%);
+    transition: transform 0.28s ease;
+    box-shadow: none;
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+    box-shadow: 12px 0 35px rgba(0, 0, 0, 0.22);
+  }
+
+  .mobile-menu-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border: 1px solid #e5b400;
+    border-radius: 11px;
+    background: #fff;
+    color: #171717;
+    cursor: pointer;
+  }
+
+  .mobile-menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    border: 0;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.48);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+  }
+
+  .mobile-menu-backdrop.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .topbar > h1 {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 701px) {
+  .mobile-menu-button,
+  .mobile-menu-backdrop {
+    display: none;
+  }
+}

@@ -6,9 +6,8 @@ import {
   ChevronRight, ChevronDown, Check, Trash2, X,
   AlertTriangle, Tag, Pencil, RefreshCw, UserX,
   UserCheck, History, MessageCircle, Bell, Settings,
-  Clock, Wallet
+  Clock, Wallet, Menu
 } from 'lucide-react'
-
 import {
   // Conserva todos tus iconos actuales
   Moon,
@@ -359,6 +358,7 @@ useEffect(() => {
   )
 }, [modoOscuro])
  const [seccion, setSeccion] = useState('Inicio')
+ const [menuMovilAbierto, setMenuMovilAbierto] = useState(false)
   const [clientes, setClientes] = useState([])
   const [busqueda, setBusqueda] = useState('')
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
@@ -1228,7 +1228,7 @@ useEffect(() => {
   <div className="cloud-error">
     {errorDatos}
   </div>
-)}      <aside className="sidebar">
+)}      <aside className={`sidebar ${menuMovilAbierto ? 'sidebar-open' : ''}`}>
         <div className="brand">
           <h2>ZONA FITNESS CLUB</h2>
           <small>Donde empieza tu cambio</small>
@@ -1243,7 +1243,10 @@ useEffect(() => {
               <button
                 key={item.nombre}
                 className={seccion === item.nombre ? 'active' : ''}
-                onClick={() => setSeccion(item.nombre)}
+                onClick={() => {
+  setSeccion(item.nombre)
+  setMenuMovilAbierto(false)
+}}
               >
                 <Icono size={19} strokeWidth={2} />
                 <span>{item.nombre}</span>
@@ -1252,9 +1255,24 @@ useEffect(() => {
           })}
         </nav>
       </aside>
-
+<button
+  type="button"
+  className={`mobile-menu-backdrop ${menuMovilAbierto ? 'visible' : ''}`}
+  onClick={() => setMenuMovilAbierto(false)}
+  aria-label="Cerrar menú"
+  tabIndex={menuMovilAbierto ? 0 : -1}
+/>
       <main className="main">
         <header className="topbar">
+<button
+  type="button"
+  className="mobile-menu-button"
+  onClick={() => setMenuMovilAbierto(true)}
+  aria-label="Abrir menú"
+  aria-expanded={menuMovilAbierto}
+>
+  <Menu size={22} />
+</button>
   <h1>{seccion}</h1>
 
   <div className="topbar-actions">
