@@ -2675,3 +2675,65 @@ tbody tr:hover {
     display: none;
   }
 }
+
+
+/* DISTRIBUCIÓN DE LA BARRA SUPERIOR EN TELÉFONOS ANGOSTOS */
+@media (max-width: 450px) {
+  .topbar {
+    display: grid !important;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .topbar > h1 {
+    min-width: 0;
+    margin: 0;
+    font-size: 23px;
+    overflow-wrap: anywhere;
+  }
+
+  .topbar-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    display: grid !important;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+  }
+
+  .theme-toggle {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .user {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 39px;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .user > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .user .avatar {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .user .logout-button {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-top: 4px;
+    white-space: nowrap;
+  }
+}
