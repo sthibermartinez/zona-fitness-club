@@ -26,7 +26,19 @@ function obtenerFecha() {
   const fecha = new Date()
   return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`
 }
+// Poner mayúscula inicial en cada palabra de un nombre
+function convertirNombre(texto) {
+  return texto.replace(/(^|\s)([a-záéíóúüñ])/g, (coincidencia, espacio, letra) =>
+    espacio + letra.toUpperCase()
+  )
+}
 
+// Poner mayúscula al inicio de cada oración
+function convertirOraciones(texto) {
+  return texto.replace(/(^\s*[a-záéíóúüñ]|[.!?]\s+[a-záéíóúüñ])/g, letra =>
+    letra.toUpperCase()
+  )
+}
 function obtenerSaludo() {
   const hora = new Date().getHours()
   if (hora >= 5 && hora < 12) return 'Buenos días'
@@ -1440,8 +1452,7 @@ onClick={cambiarTema}      title={modoOscuro ? 'Activar modo claro' : 'Activar m
                         type="text"
                         placeholder="Nombre y apellidos"
                         value={formulario.nombre}
-                        onChange={e => setFormulario({ ...formulario, nombre: e.target.value })}
-                        required
+onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.value) })}                        required
                       />
                     </label>
 
