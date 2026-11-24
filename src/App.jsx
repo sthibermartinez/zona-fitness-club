@@ -375,7 +375,7 @@ useEffect(() => {
 
   const [clienteExpandido, setClienteExpandido] = useState(null)
   const [clienteEditando, setClienteEditando] = useState(null)
-
+const [cobrarInscripcion, setCobrarInscripcion] = useState(false)
   const [promociones, setPromociones] = useState([
     {
       id: 1,
@@ -776,7 +776,7 @@ useEffect(() => {
       promocion: ''
     })
     setClienteEditando(null)
-    setMostrarFormulario(false)
+    setCobrarInscripcion(false)
     setClienteExpandido(null)
   }
 
@@ -821,7 +821,9 @@ useEffect(() => {
                   fechaInicio: formulario.fechaInicio,
                   fechaFin: nuevoVencimiento,
                   tipo: formulario.tipo,
-                  precio: precioFinal,
+                  precio: precioCobrado,
+precioMembresia: precioFinal,
+inscripcion: cobrarInscripcion ? 50 : 0,
                   metodoPago: formulario.metodoPago,
                   promocion: promocionSeleccionada?.nombre || ''
                 }
@@ -846,7 +848,7 @@ useEffect(() => {
       cancelarEdicionCliente()
       return
     }
-
+const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
     const nuevoCliente = {
       id: Date.now(),
       ...formulario,
@@ -1528,6 +1530,29 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                       Precio de membresía
                       <input type="text" value={`Q${Number(precioFinal).toFixed(2)}`} readOnly />
                     </label>
+
+{!clienteEditando && (
+  <label className="inscripcion-option">
+    <span>Inscripción inicial</span>
+    <div>
+      <input
+        type="checkbox"
+        checked={cobrarInscripcion}
+        onChange={e => setCobrarInscripcion(e.target.checked)}
+      />
+      Agregar Q50 de inscripción
+    </div>
+  </label>
+)}
+
+<label>
+  Total a cobrar
+  <input
+    type="text"
+    value={`Q${(Number(precioFinal) + (!clienteEditando && cobrarInscripcion ? 50 : 0)).toFixed(2)}`}
+    readOnly
+  />
+</label>
 
                     <label>
                       Método de pago
