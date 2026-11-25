@@ -77,7 +77,8 @@ function diferenciaDias(fechaDesde, fechaHasta) {
 function calcularVencimiento(fecha, tipo) {
   if (!fecha) return ''
   if (tipo === 'Mensual') return sumarDias(fecha, 30)
-  if (tipo === 'Quincenal') return sumarDias(fecha, 15)
+  // El día de pago cuenta como el día 1: 15 días en total = fecha de pago + 14
+  if (tipo === 'Quincenal') return sumarDias(fecha, 14)
   return ''
 }
 
@@ -380,7 +381,7 @@ function SelectorMes({ value, onChange }) {
   )
 }
 
-function SelectorFecha({ value, onChange }) {
+function SelectorFecha({ value, onChange, fechaMaxima }) {
   const anioActual = new Date().getFullYear()
   const [abierto, setAbierto] = useState(false)
   const [vista, setVista] = useState('calendario')
@@ -497,6 +498,7 @@ function SelectorFecha({ value, onChange }) {
                   const fechaDia = `${anioActual}-${String(mesVisible + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
                   const seleccionado = fechaVista === fechaDia
                   const hoy = obtenerFecha() === fechaDia
+                  const bloqueado = Boolean(fechaMaxima) && fechaDia > fechaMaxima
 
                   return (
                     <button
@@ -508,6 +510,8 @@ function SelectorFecha({ value, onChange }) {
                         hoy ? 'today' : ''
                       ].join(' ')}
                       onClick={() => seleccionarDia(dia)}
+                      disabled={bloqueado}
+                      style={bloqueado ? { opacity: 0.3, cursor: 'not-allowed' } : undefined}
                     >
                       {dia}
                     </button>
@@ -786,7 +790,8 @@ useEffect(() => {
     modalidad: 'normal',
     tipo: 'Mensual',
     metodoPago: 'Efectivo',
-    promocion: ''
+    promocion: '',
+    fechaPago: obtenerFecha()
   })
 
   const menu = [
@@ -946,7 +951,7 @@ useEffect(() => {
     ? formularioRenovacion.modalidad === 'anticipado' &&
       clienteRenovando.vencimiento >= obtenerFecha()
       ? sumarDias(clienteRenovando.vencimiento, 1)
-      : obtenerFecha()
+      : formularioRenovacion.fechaPago || obtenerFecha()
     : obtenerFecha()
 
   const promocionesDisponiblesRenovacion = clienteRenovando
@@ -1462,7 +1467,8 @@ precio: precioCobrado,        metodoPago: formulario.metodoPago,
       modalidad: vigente ? 'anticipado' : 'normal',
       tipo: obtenerUltimaMembresia(cliente)?.tipo || cliente.tipo || 'Mensual',
       metodoPago: 'Efectivo',
-      promocion: ''
+      promocion: '',
+      fechaPago: obtenerFecha()
     })
 
     setMembresiaExpandida(null)
@@ -1474,7 +1480,8 @@ precio: precioCobrado,        metodoPago: formulario.metodoPago,
       modalidad: 'normal',
       tipo: 'Mensual',
       metodoPago: 'Efectivo',
-      promocion: ''
+      promocion: '',
+      fechaPago: obtenerFecha()
     })
   }
 
@@ -1496,9 +1503,20 @@ precio: precioCobrado,        metodoPago: formulario.metodoPago,
       return
     }
 
+    const fechaPagoSeleccionada = formularioRenovacion.fechaPago || obtenerFecha()
+
+    if (fechaPagoSeleccionada > obtenerFecha()) {
+      setAviso({
+        tipo: 'fecha',
+        titulo: 'Fecha de pago no válida',
+        mensaje: 'La fecha de pago no puede ser posterior a hoy.'
+      })
+      return
+    }
+
     const fechaInicio = vigente && formularioRenovacion.modalidad === 'anticipado'
       ? sumarDias(clienteActual.vencimiento, 1)
-      : obtenerFecha()
+      : fechaPagoSeleccionada
 
     const fechaFin = calcularVencimiento(fechaInicio, formularioRenovacion.tipo)
 
@@ -1511,7 +1529,8 @@ precio: precioCobrado,        metodoPago: formulario.metodoPago,
       precio: precioRenovacion,
       metodoPago: formularioRenovacion.metodoPago,
       promocion: promocionRenovacion?.nombre || '',
-      fechaPago: obtenerFecha(),
+      fechaPago: fechaPagoSeleccionada,
+      fechaRegistro: obtenerFecha(),
       modalidad: vigente && formularioRenovacion.modalidad === 'anticipado'
         ? 'Pago anticipado'
         : 'Renovación normal'
@@ -3656,6 +3675,19 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                 </label>
 
                 <label>
+                  Fecha de pago
+                  <SelectorFecha
+                    value={formularioRenovacion.fechaPago}
+                    fechaMaxima={obtenerFecha()}
+                    onChange={fecha => setFormularioRenovacion(actual => ({
+                      ...actual,
+                      fechaPago: fecha,
+                      promocion: ''
+                    }))}
+                  />
+                </label>
+
+                <label>
                   Precio a pagar
                   <input type="text" value={`Q${Number(precioRenovacion).toFixed(2)}`} readOnly />
                 </label>
@@ -3665,7 +3697,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                 <h4>Resumen de la nueva membresía</h4>
                 <div>
                   <span>Fecha de pago</span>
-                  <strong>{formatearFecha(obtenerFecha())}</strong>
+                  <strong>{formatearFecha(formularioRenovacion.fechaPago || obtenerFecha())}</strong>
                 </div>
                 <div>
                   <span>Inicio de la membresía</span>
