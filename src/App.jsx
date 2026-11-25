@@ -122,6 +122,9 @@ function formatearNumeroRecibo(numero) {
 }
 
 function obtenerConceptoRecibo(registro) {
+  if (registro.incluyeInscripcion) {
+    return `Inscripción + ${registro.tipo === 'Quincenal' ? 'Quincena' : 'Mensualidad'}`
+  }
   if (registro.tipo === 'Quincenal') return 'Quincena'
   if (registro.tipo === 'Mensual') return 'Mensualidad'
   return registro.tipo || 'Membresía'
@@ -1423,6 +1426,21 @@ const nombreMesReporte = mesGenerado
       return
     }
 const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
+    const registroInicial = {
+      id: Date.now() + 1,
+      numeroRecibo: obtenerSiguienteNumeroRecibo(clientes),
+      fechaInicio: formulario.fechaInicio,
+      fechaFin: fechaVencimiento,
+      tipo: formulario.tipo,
+      precio: precioCobrado,
+      metodoPago: formulario.metodoPago,
+      promocion: promocionSeleccionada?.nombre || '',
+      fechaPago: obtenerFecha(),
+      fechaRegistro: obtenerFecha(),
+      incluyeInscripcion: cobrarInscripcion,
+      modalidad: 'Inscripción inicial'
+    }
+
     const nuevoCliente = {
       id: Date.now(),
       ...formulario,
@@ -1433,16 +1451,7 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
       vencimiento: fechaVencimiento,
       activo: true,
       recordatoriosEnviados: [],
-      historialMembresias: [{
-        id: Date.now() + 1,
-        fechaInicio: formulario.fechaInicio,
-        fechaFin: fechaVencimiento,
-        tipo: formulario.tipo,
-precio: precioCobrado,        metodoPago: formulario.metodoPago,
-        promocion: promocionSeleccionada?.nombre || '',
-        fechaPago: obtenerFecha(),
-        modalidad: 'Inscripción inicial'
-      }]
+      historialMembresias: [registroInicial]
     }
 
     setClientes(actuales => [...actuales, nuevoCliente])
@@ -1457,6 +1466,13 @@ precio: precioCobrado,        metodoPago: formulario.metodoPago,
     })
     setMostrarFormulario(false)
     setCobrarInscripcion(false)
+    setErrorRecibo('')
+    setAviso({
+      tipo: 'renovacionExitosa',
+      cliente: nuevoCliente,
+      registro: registroInicial,
+      esNuevoCliente: true
+    })
   }
 
   function abrirRenovacion(cliente) {
@@ -3772,9 +3788,11 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
 
             {aviso.tipo === 'renovacionExitosa' && (
               <>
-                <h2 id="modal-title">Renovación registrada</h2>
+                <h2 id="modal-title">{aviso.esNuevoCliente ? 'Cliente registrado' : 'Renovación registrada'}</h2>
                 <p className="modal-description">
-                  La renovación de {aviso.cliente.nombre} se registró correctamente.
+                  {aviso.esNuevoCliente
+                    ? `${aviso.cliente.nombre} se registró correctamente.`
+                    : `La renovación de ${aviso.cliente.nombre} se registró correctamente.`}
                 </p>
                 <div className="modal-client-info">
                   <span>RECIBO No. {formatearNumeroRecibo(aviso.registro.numeroRecibo)}</span>
