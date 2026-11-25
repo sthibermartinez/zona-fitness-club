@@ -1564,6 +1564,22 @@ precio: precioCobrado,        metodoPago: formulario.metodoPago,
       const imagen = await crearImagenRecibo(registro, cliente.nombre)
       const nombreArchivo = `Recibo-${formatearNumeroRecibo(registro.numeroRecibo)}.png`
 
+      const mensaje = `${obtenerSaludo()}, ${cliente.nombre}. Le compartimos su recibo de pago No. ${formatearNumeroRecibo(registro.numeroRecibo)} de Zona Fitness Club. ¡Gracias por su preferencia! 💪`
+
+      // En celular: menú Compartir del teléfono con la imagen ya adjunta
+      const archivoRecibo = new File([imagen], nombreArchivo, { type: 'image/png' })
+      const esMovil = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+
+      if (esMovil && navigator.canShare && navigator.canShare({ files: [archivoRecibo] })) {
+        try {
+          await navigator.share({ files: [archivoRecibo], text: mensaje })
+          setAviso({ tipo: 'reciboGenerado', cliente, registro, compartido: true, nombreArchivo })
+          return
+        } catch (errorCompartir) {
+          if (errorCompartir?.name === 'AbortError') return
+        }
+      }
+
       let copiado = false
       try {
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': imagen })])
@@ -1580,7 +1596,6 @@ precio: precioCobrado,        metodoPago: formulario.metodoPago,
         setTimeout(() => URL.revokeObjectURL(enlaceDescarga.href), 1000)
       }
 
-      const mensaje = `${obtenerSaludo()}, ${cliente.nombre}. Le compartimos su recibo de pago No. ${formatearNumeroRecibo(registro.numeroRecibo)} de Zona Fitness Club. ¡Gracias por su preferencia! 💪`
       const url = `https://wa.me/502${cliente.telefono}?text=${encodeURIComponent(mensaje)}`
       window.open(url, '_blank', 'noopener,noreferrer')
 
@@ -3757,7 +3772,9 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
               <>
                 <h2 id="modal-title">Recibo listo para enviar</h2>
                 <p className="modal-description">
-                  {aviso.copiado
+                  {aviso.compartido
+                    ? `El recibo se envió al menú de compartir de tu teléfono. Confirma en WhatsApp que el mensaje llegó al chat de ${aviso.cliente.nombre}.`
+                    : aviso.copiado
                     ? `Se abrió WhatsApp con el chat de ${aviso.cliente.nombre}. El recibo ya está copiado: presiona Ctrl + V dentro del chat para pegarlo y luego presiona Enviar.`
                     : `Se abrió WhatsApp con el chat de ${aviso.cliente.nombre}. No fue posible copiar el recibo, así que se descargó el archivo ${aviso.nombreArchivo}. Adjúntalo en el chat con el clip y presiona Enviar.`}
                 </p>
