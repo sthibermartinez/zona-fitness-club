@@ -176,10 +176,14 @@ async function crearImagenRecibo(registro, nombreCliente) {
   texto(`RECIBO No. ${formatearNumeroRecibo(registro.numeroRecibo)}`, ancho / 2, 325, 28, 600, '#BDBDBD', 'center')
 
   // Datos del pago
+  // Cliente nuevo: se muestra la fecha de inscripción. Renovación: la fecha de pago.
+  const esInscripcion = registro.modalidad === 'Inscripción inicial'
   const filas = [
     ['CLIENTE', nombreCliente],
     ['CONCEPTO', obtenerConceptoRecibo(registro)],
-    ['FECHA DE PAGO', formatearFecha(registro.fechaPago || registro.fechaInicio)],
+    esInscripcion
+      ? ['FECHA DE INSCRIPCIÓN', formatearFecha(registro.fechaInicio)]
+      : ['FECHA DE PAGO', formatearFecha(registro.fechaPago || registro.fechaInicio)],
     ['VIGENCIA', `${formatearFecha(registro.fechaInicio)} al ${formatearFecha(registro.fechaFin)}`]
   ]
 
@@ -1435,7 +1439,7 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
       precio: precioCobrado,
       metodoPago: formulario.metodoPago,
       promocion: promocionSeleccionada?.nombre || '',
-      fechaPago: obtenerFecha(),
+      fechaPago: formulario.fechaInicio,
       fechaRegistro: obtenerFecha(),
       incluyeInscripcion: cobrarInscripcion,
       modalidad: 'Inscripción inicial'
