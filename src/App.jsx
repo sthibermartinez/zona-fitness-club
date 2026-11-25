@@ -6,7 +6,7 @@ import {
   ChevronRight, ChevronDown, Check, Trash2, X,
   AlertTriangle, Tag, Pencil, RefreshCw, UserX,
   UserCheck, History, MessageCircle, Bell, Settings,
-  Clock, Wallet, Menu
+  Clock, Wallet, Menu, Droplet, Package, Save
 } from 'lucide-react'
 import {
   // Conserva todos tus iconos actuales
@@ -20,6 +20,17 @@ import { supabase } from './supabase'
 const EMAILJS_SERVICE_ID = 'service_hqfkepk'
 const EMAILJS_TEMPLATE_ID = 'template_6rqaj9g'
 const EMAILJS_PUBLIC_KEY = 'PMdHSL_neEKHEKyXH'
+
+const PRODUCTOS_BASE_VENTAS = [
+  { id: 'base-visitas', tipo: 'base', clave: 'visitas', nombre: 'Visitas', detalle: 'Entradas al gimnasio', precio: 15, icono: 'Users', activo: true },
+  { id: 'base-agua', tipo: 'base', clave: 'agua', nombre: 'Botellas de agua', detalle: 'Unidades vendidas', precio: 8, icono: 'Package', activo: true },
+  { id: 'base-proteina', tipo: 'base', clave: 'proteina', nombre: 'Scoop de proteína', detalle: 'Porciones vendidas', precio: 13, icono: 'Package', activo: true },
+  { id: 'base-creatina', tipo: 'base', clave: 'creatina', nombre: 'Scoop de creatina', detalle: 'Porciones vendidas', precio: 5, icono: 'Package', activo: true }
+]
+
+function obtenerNombreCorto(nombre) {
+  return String(nombre || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).join(' ')
+}
 
 function obtenerFecha() {
   const fecha = new Date()
@@ -133,6 +144,127 @@ function SelectorOpcion({ value, options, onChange, placeholder }) {
               {value === opcion && <Check size={16} />}
             </button>
           ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+function SelectorMes({ value, onChange }) {
+  const fechaActual = obtenerFecha().slice(0, 7)
+  const [abierto, setAbierto] = useState(false)
+  const [anioVisible, setAnioVisible] = useState(() =>
+    Number((value || fechaActual).slice(0, 4))
+  )
+  const selectorRef = useRef(null)
+
+  const nombresMeses = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ]
+  const mesSeleccionado = value ? Number(value.slice(5, 7)) - 1 : -1
+  const nombreMes = value
+    ? new Date(Number(value.slice(0, 4)), mesSeleccionado, 1)
+        .toLocaleDateString('es-GT', { month: 'long', year: 'numeric' })
+    : 'Seleccionar mes'
+
+  useEffect(() => {
+    function detectarClickFuera(evento) {
+      if (selectorRef.current && !selectorRef.current.contains(evento.target)) {
+        setAbierto(false)
+      }
+    }
+    document.addEventListener('pointerdown', detectarClickFuera)
+    return () => document.removeEventListener('pointerdown', detectarClickFuera)
+  }, [])
+
+  function abrirSelector() {
+    if (!abierto) {
+      setAnioVisible(Number((value || fechaActual).slice(0, 4)))
+      setAbierto(true)
+    } else {
+      setAbierto(false)
+    }
+  }
+
+  function seleccionarMes(indice) {
+    const nuevoMes = `${anioVisible}-${String(indice + 1).padStart(2, '0')}`
+    if (nuevoMes > fechaActual) return
+    onChange(nuevoMes)
+    setAbierto(false)
+  }
+
+  return (
+    <div className="date-picker report-month-picker" ref={selectorRef}>
+      <button
+        type="button"
+        className={`date-input ${abierto ? 'date-input-open' : ''}`}
+        onClick={abrirSelector}
+        aria-expanded={abierto}
+        aria-label="Seleccionar mes del informe"
+      >
+        <span className={value ? 'date-value' : 'date-placeholder'}>
+          {nombreMes}
+        </span>
+        <CalendarDays size={18} />
+      </button>
+
+      {abierto && (
+        <div className="calendar-popup report-month-popup">
+          <div className="month-selector">
+            <div className="month-selector-header">
+              <button
+                type="button"
+                className="calendar-nav"
+                onClick={() => setAnioVisible(anio => anio - 1)}
+                aria-label="Año anterior"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <div>
+                <strong>{anioVisible}</strong>
+                <span>Selecciona un mes</span>
+              </div>
+
+              <button
+                type="button"
+                className="calendar-nav"
+                onClick={() => setAnioVisible(anio => anio + 1)}
+                disabled={anioVisible >= Number(fechaActual.slice(0, 4))}
+                aria-label="Año siguiente"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+
+            <div className="month-grid">
+              {nombresMeses.map((mes, indice) => {
+                const claveMes = `${anioVisible}-${String(indice + 1).padStart(2, '0')}`
+                const esFuturo = claveMes > fechaActual
+                const esSeleccionado =
+                  anioVisible === Number(value?.slice(0, 4)) &&
+                  indice === mesSeleccionado
+
+                return (
+                  <button
+                    type="button"
+                    key={mes}
+                    disabled={esFuturo}
+                    className={`month-option ${esSeleccionado ? 'month-selected' : ''}`}
+                    onClick={() => seleccionarMes(indice)}
+                  >
+                    {mes.slice(0, 3)}
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="calendar-footer">
+              <span>Selecciona el período que deseas consultar</span>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -360,6 +492,17 @@ useEffect(() => {
  const [seccion, setSeccion] = useState('Inicio')
  const [menuMovilAbierto, setMenuMovilAbierto] = useState(false)
   const [clientes, setClientes] = useState([])
+  const [registrosVentas, setRegistrosVentas] = useState([])
+  const [productosVenta, setProductosVenta] = useState(PRODUCTOS_BASE_VENTAS)
+  const [fechaVenta, setFechaVenta] = useState(obtenerFecha())
+  const [formularioVentas, setFormularioVentas] = useState({ visitas: '0', agua: '0', proteina: '0', creatina: '0', productos: {} })
+  const [mostrarNuevoProducto, setMostrarNuevoProducto] = useState(false)
+  const [productoAEliminar, setProductoAEliminar] = useState(null)
+  const [productoEditando, setProductoEditando] = useState(null)
+  const [modoEdicionCatalogo, setModoEdicionCatalogo] = useState(false)
+  const [formularioProductoEdicion, setFormularioProductoEdicion] = useState({ nombre: '', precio: '' })
+  const [nuevoProducto, setNuevoProducto] = useState({ nombre: '', precio: '' })
+  const [avisoVentas, setAvisoVentas] = useState('')
   const [busqueda, setBusqueda] = useState('')
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [aviso, setAviso] = useState(null)
@@ -372,7 +515,9 @@ useEffect(() => {
   })
   const [enviandoReporte, setEnviandoReporte] = useState(false)
   const [resultadoReporte, setResultadoReporte] = useState(null)
-
+// ESTADOS DEL RESUMEN MENSUAL
+const [mesSeleccionado, setMesSeleccionado] = useState(obtenerFecha().slice(0, 7))
+const [mesGenerado, setMesGenerado] = useState('')
   const [clienteExpandido, setClienteExpandido] = useState(null)
   const [clienteEditando, setClienteEditando] = useState(null)
 const [cobrarInscripcion, setCobrarInscripcion] = useState(false)
@@ -437,7 +582,7 @@ useEffect(() => {
   async function cargarDatos() {
     const { data, error } = await supabase
       .from('zona_fitness_datos')
-      .select('clientes, promociones, configuracion_avisos')
+      .select('clientes, promociones, configuracion_avisos, registros_ventas, productos_venta')
       .eq('user_id', user.id)
       .maybeSingle()
 
@@ -455,6 +600,17 @@ useEffect(() => {
       setConfiguracionAvisos(
         Array.isArray(data.configuracion_avisos) ? data.configuracion_avisos : []
       )
+      setRegistrosVentas(Array.isArray(data.registros_ventas) ? data.registros_ventas : [])
+      const catalogoGuardado = Array.isArray(data.productos_venta) ? data.productos_venta : []
+      const productosBaseGuardados = catalogoGuardado.filter(producto => producto.tipo === 'base')
+      const productosPersonalizados = catalogoGuardado.filter(producto => producto.tipo !== 'base')
+      setProductosVenta([
+        ...PRODUCTOS_BASE_VENTAS.map(productoBase => ({
+          ...productoBase,
+          ...(productosBaseGuardados.find(producto => producto.id === productoBase.id) || {})
+        })),
+        ...productosPersonalizados
+      ])
     }
 
     setDatosCargados(true)
@@ -478,6 +634,8 @@ useEffect(() => {
         clientes,
         promociones,
         configuracion_avisos: configuracionAvisos,
+        registros_ventas: registrosVentas,
+        productos_venta: productosVenta,
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id' })
 
@@ -490,7 +648,7 @@ useEffect(() => {
   }, 600)
 
   return () => clearTimeout(temporizador)
-}, [datosCargados, user.id, clientes, promociones, configuracionAvisos])
+}, [datosCargados, user.id, clientes, promociones, configuracionAvisos, registrosVentas, productosVenta])
   const [mostrarConfiguracionAvisos, setMostrarConfiguracionAvisos] = useState(false)
 
   const formularioPromoInicial = {
@@ -526,6 +684,7 @@ useEffect(() => {
     { nombre: 'Membresías', icono: CalendarCheck },
     { nombre: 'Promociones', icono: Tag },
     { nombre: 'Pagos', icono: CreditCard },
+    { nombre: 'Ventas diarias', icono: Wallet },
     { nombre: 'Mediciones', icono: Ruler },
     { nombre: 'Reportes', icono: BarChart3 }
   ]
@@ -546,6 +705,108 @@ useEffect(() => {
 
   const fechaVencimiento = calcularVencimiento(formulario.fechaInicio, formulario.tipo)
 
+  useEffect(() => {
+    const registro = registrosVentas.find(item => item.fecha === fechaVenta)
+    setFormularioVentas(registro ? {
+      visitas: String(registro.visitas ?? 0),
+      agua: String(registro.agua ?? 0),
+      proteina: String(registro.proteina ?? 0),
+      creatina: String(registro.creatina ?? 0),
+      productos: registro.productos || {}
+    } : { visitas: '0', agua: '0', proteina: '0', creatina: '0', productos: {} })
+    setAvisoVentas('')
+  }, [fechaVenta, registrosVentas])
+
+  const productosActivosVenta = productosVenta.filter(producto => producto.activo !== false)
+  const ingresosVentasDia = productosActivosVenta.reduce((total, producto) => {
+    const cantidad = producto.tipo === 'base'
+      ? Number(formularioVentas[producto.clave] || 0)
+      : Number(formularioVentas.productos?.[producto.id] || 0)
+    return total + cantidad * Number(producto.precio || 0)
+  }, 0)
+
+  // Ingreso total de un registro de Ventas diarias (cantidad x precio histórico).
+  // Usa registro.precios; si el registro es antiguo y no tiene ese precio, usa el catálogo actual.
+  function calcularIngresosRegistroVenta(registro) {
+    if (!registro) return 0
+    return productosVenta.reduce((suma, producto) => {
+      const clave = producto.tipo === 'base' ? producto.clave : producto.id
+      const cantidad = producto.tipo === 'base'
+        ? Number(registro[producto.clave] || 0)
+        : Number(registro.productos?.[producto.id] || 0)
+      const precio = Number(registro.precios?.[clave] ?? producto.precio ?? 0)
+      return suma + (Number.isFinite(cantidad) ? cantidad : 0) * (Number.isFinite(precio) ? precio : 0)
+    }, 0)
+  }
+
+  function guardarVentasDia() {
+    const nuevoRegistro = {
+      fecha: fechaVenta,
+      visitas: Math.max(0, Number(formularioVentas.visitas || 0)),
+      agua: Math.max(0, Number(formularioVentas.agua || 0)),
+      proteina: Math.max(0, Number(formularioVentas.proteina || 0)),
+      creatina: Math.max(0, Number(formularioVentas.creatina || 0)),
+      productos: Object.fromEntries(Object.entries(formularioVentas.productos || {}).map(([id, cantidad]) => [id, Math.max(0, Number(cantidad || 0))])),
+      precios: Object.fromEntries(productosVenta.map(producto => [producto.tipo === 'base' ? producto.clave : producto.id, Number(producto.precio || 0)])),
+      nombres: Object.fromEntries(productosVenta.map(producto => [producto.tipo === 'base' ? producto.clave : producto.id, producto.nombre]))
+    }
+    setRegistrosVentas(actuales => [...actuales.filter(item => item.fecha !== fechaVenta), nuevoRegistro].sort((a, b) => a.fecha.localeCompare(b.fecha)))
+    setAvisoVentas('Registro del día actualizado. Se guardará automáticamente.')
+  }
+
+  function agregarProductoVenta(evento) {
+    evento.preventDefault()
+    const nombre = nuevoProducto.nombre.trim()
+    const precio = Number(nuevoProducto.precio)
+    if (!nombre || !Number.isFinite(precio) || precio <= 0) return
+    const producto = { id: `producto-${Date.now()}`, nombre, precio }
+    setProductosVenta(actuales => [...actuales, producto])
+    setFormularioVentas(actual => ({ ...actual, productos: { ...actual.productos, [producto.id]: '0' } }))
+    setNuevoProducto({ nombre: '', precio: '' })
+    setMostrarNuevoProducto(false)
+  }
+
+  function abrirEdicionProductoVenta(producto) {
+    setProductoEditando(producto)
+    setFormularioProductoEdicion({ nombre: producto.nombre || '', precio: String(producto.precio ?? '') })
+  }
+
+  function guardarEdicionProductoVenta(evento) {
+    evento.preventDefault()
+    if (!productoEditando) return
+    const nombre = formularioProductoEdicion.nombre.trim()
+    const precio = Number(formularioProductoEdicion.precio)
+    if (!nombre || !Number.isFinite(precio) || precio <= 0) return
+
+    // Antes de cambiar precios, fijamos los precios actuales en registros antiguos
+    // que todavía no tenían una copia histórica de su catálogo.
+    setRegistrosVentas(actuales => actuales.map(registro => registro.precios ? registro : ({
+      ...registro,
+      precios: Object.fromEntries(productosVenta.map(producto => [
+        producto.tipo === 'base' ? producto.clave : producto.id,
+        Number(producto.precio || 0)
+      ]))
+    })))
+
+    setProductosVenta(actuales => actuales.map(producto =>
+      producto.id === productoEditando.id ? { ...producto, nombre, precio } : producto
+    ))
+    setProductoEditando(null)
+    setModoEdicionCatalogo(false)
+    setAvisoVentas('Producto actualizado correctamente.')
+  }
+
+  function confirmarEliminarProductoVenta() {
+    if (!productoAEliminar) return
+    // Se desactiva en lugar de borrarlo para conservar los importes de ventas históricas.
+    setProductosVenta(actuales => actuales.map(producto =>
+      producto.id === productoAEliminar.id ? { ...producto, activo: false } : producto
+    ))
+    setProductoAEliminar(null)
+    setModoEdicionCatalogo(false)
+    setAvisoVentas('Producto eliminado de la lista de ventas.')
+  }
+
   const clientesFiltrados = clientes.filter(cliente =>
     `${cliente.nombre} ${cliente.telefono}`.toLowerCase().includes(busqueda.toLowerCase())
   )
@@ -562,6 +823,13 @@ useEffect(() => {
       .reduce((suma, membresia) => suma + Number(membresia.precio || 0), 0)
     return total + ingresosCliente
   }, 0)
+
+  // Ventas diarias del mes actual (se suman aparte de las membresías, sin duplicar)
+  const ingresosVentasDiariasMes = registrosVentas
+    .filter(registro => (registro.fecha || '').slice(0, 7) === obtenerFecha().slice(0, 7))
+    .reduce((total, registro) => total + calcularIngresosRegistroVenta(registro), 0)
+
+  const ingresosMesTotal = ingresosMes + ingresosVentasDiariasMes
 
   const fechaInicioRenovacion = clienteRenovando
     ? formularioRenovacion.modalidad === 'anticipado' &&
@@ -619,7 +887,197 @@ useEffect(() => {
     .sort((a, b) =>
       (b.fechaPago || b.fechaInicio || '').localeCompare(a.fechaPago || a.fechaInicio || '')
     )
+// DATOS DEL RESUMEN MENSUAL
+const pagosDelMes = mesGenerado
+  ? historialPagos.filter(pago =>
+      (pago.fechaPago || pago.fechaInicio || '').slice(0, 7) === mesGenerado
+    )
+  : []
 
+const fechaMesAnterior = mesGenerado
+  ? (() => {
+      const [anio, mes] = mesGenerado.split('-').map(Number)
+      const fecha = new Date(anio, mes - 2, 1)
+      return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`
+    })()
+  : ''
+
+const pagosMesAnterior = fechaMesAnterior
+  ? historialPagos.filter(pago =>
+      (pago.fechaPago || pago.fechaInicio || '').slice(0, 7) === fechaMesAnterior
+    )
+  : []
+
+const registrosVentasDelMes = mesGenerado
+  ? registrosVentas.filter(registro => (registro.fecha || '').slice(0, 7) === mesGenerado)
+  : []
+
+const registrosVentasMesAnterior = fechaMesAnterior
+  ? registrosVentas.filter(registro => (registro.fecha || '').slice(0, 7) === fechaMesAnterior)
+  : []
+
+const ingresosMembresiasReporte = pagosDelMes.reduce(
+  (total, pago) => total + Number(pago.precio || 0), 0
+)
+
+const ingresosVentasReporte = registrosVentasDelMes.reduce(
+  (total, registro) => total + calcularIngresosRegistroVenta(registro), 0
+)
+
+const ingresosReporte = ingresosMembresiasReporte + ingresosVentasReporte
+
+const ingresosMembresiasMesAnterior = pagosMesAnterior.reduce(
+  (total, pago) => total + Number(pago.precio || 0), 0
+)
+
+const ingresosVentasMesAnterior = registrosVentasMesAnterior.reduce(
+  (total, registro) => total + calcularIngresosRegistroVenta(registro), 0
+)
+
+const ingresosMesAnterior = ingresosMembresiasMesAnterior + ingresosVentasMesAnterior
+
+const diferenciaIngresos = ingresosReporte - ingresosMesAnterior
+
+const porcentajeCambio = ingresosMesAnterior > 0
+  ? (diferenciaIngresos / ingresosMesAnterior) * 100
+  : ingresosReporte > 0 ? 100 : 0
+
+const nuevasInscripciones = pagosDelMes.filter(
+  pago => pago.modalidad === 'Inscripción inicial'
+).length
+
+const renovacionesReporte = pagosDelMes.filter(
+  pago => pago.modalidad !== 'Inscripción inicial'
+).length
+
+const pagosEfectivo = pagosDelMes.filter(
+  pago => pago.metodoPago === 'Efectivo'
+)
+
+const pagosTransferencia = pagosDelMes.filter(
+  pago => pago.metodoPago === 'Transferencia'
+)
+
+const diasDelMes = mesGenerado
+  ? new Date(
+      Number(mesGenerado.slice(0, 4)),
+      Number(mesGenerado.slice(5, 7)),
+      0
+    ).getDate()
+  : 0
+
+const ventasDiarias = Array.from({ length: diasDelMes }, (_, indice) => {
+  const dia = String(indice + 1).padStart(2, '0')
+  const fecha = `${mesGenerado}-${dia}`
+
+  const pagosDia = pagosDelMes.filter(
+    pago => (pago.fechaPago || pago.fechaInicio) === fecha
+  )
+
+  const ingresosMembresiasDia = pagosDia.reduce(
+    (total, pago) => total + Number(pago.precio || 0), 0
+  )
+
+  const ingresosVentasDiaReporte = registrosVentasDelMes
+    .filter(registro => registro.fecha === fecha)
+    .reduce((total, registro) => total + calcularIngresosRegistroVenta(registro), 0)
+
+  return {
+    dia: indice + 1,
+    ingresosMembresias: ingresosMembresiasDia,
+    ingresosVentas: ingresosVentasDiaReporte,
+    ingresos: ingresosMembresiasDia + ingresosVentasDiaReporte,
+    cantidad: pagosDia.length
+  }
+})
+
+const maximoDiario = Math.max(
+  0,
+  ...ventasDiarias.map(dia => dia.ingresos)
+)
+
+const diaMayorIngreso = ventasDiarias.reduce(
+  (mayor, dia) => dia.ingresos > mayor.ingresos ? dia : mayor,
+  { dia: 0, ingresos: 0, cantidad: 0 }
+)
+
+const diaMasPagos = ventasDiarias.reduce(
+  (mayor, dia) => dia.cantidad > mayor.cantidad ? dia : mayor,
+  { dia: 0, ingresos: 0, cantidad: 0 }
+)
+
+const ventasSemanales = [1, 2, 3, 4, 5].map(semana => {
+  const inicio = (semana - 1) * 7 + 1
+  const fin = Math.min(semana * 7, diasDelMes)
+
+  const pagosSemana = pagosDelMes.filter(pago => {
+    const fecha = pago.fechaPago || pago.fechaInicio
+    if (!fecha) return false
+
+    const dia = Number(fecha.slice(8, 10))
+    return dia >= inicio && dia <= fin
+  })
+
+  const ingresosMembresiasSemana = pagosSemana.reduce(
+    (total, pago) => total + Number(pago.precio || 0), 0
+  )
+
+  const ingresosVentasSemana = registrosVentasDelMes
+    .filter(registro => {
+      const dia = Number((registro.fecha || '').slice(8, 10))
+      return dia >= inicio && dia <= fin
+    })
+    .reduce((total, registro) => total + calcularIngresosRegistroVenta(registro), 0)
+
+  return {
+    semana,
+    inicio,
+    fin,
+    ingresosMembresias: ingresosMembresiasSemana,
+    ingresosVentas: ingresosVentasSemana,
+    ingresos: ingresosMembresiasSemana + ingresosVentasSemana,
+    cantidad: pagosSemana.length
+  }
+}).filter(semana => semana.inicio <= diasDelMes)
+
+const maximoSemanal = Math.max(
+  0,
+  ...ventasSemanales.map(semana => semana.ingresos)
+)
+
+const metodosPagoReporte = [
+  {
+    nombre: 'Efectivo',
+    cantidad: pagosEfectivo.length,
+    ingresos: pagosEfectivo.reduce(
+      (total, pago) => total + Number(pago.precio || 0), 0
+    )
+  },
+  {
+    nombre: 'Transferencia',
+    cantidad: pagosTransferencia.length,
+    ingresos: pagosTransferencia.reduce(
+      (total, pago) => total + Number(pago.precio || 0), 0
+    )
+  },
+  {
+    nombre: 'Sin especificar',
+    cantidad: pagosDelMes.filter(
+      pago => !['Efectivo', 'Transferencia'].includes(pago.metodoPago)
+    ).length,
+    ingresos: pagosDelMes.filter(
+      pago => !['Efectivo', 'Transferencia'].includes(pago.metodoPago)
+    ).reduce((total, pago) => total + Number(pago.precio || 0), 0)
+  }
+]
+
+const nombreMesReporte = mesGenerado
+  ? new Date(
+      Number(mesGenerado.slice(0, 4)),
+      Number(mesGenerado.slice(5, 7)) - 1,
+      1
+    ).toLocaleDateString('es-GT', { month: 'long', year: 'numeric' })
+  : ''
   const clientesPorVencer = clientes
     .filter(cliente => {
       const diasRestantes = diferenciaDias(obtenerFecha(), cliente.vencimiento)
@@ -766,19 +1224,21 @@ useEffect(() => {
   }
 
   function cancelarEdicionCliente() {
-    setFormulario({
-      nombre: '',
-      telefono: '',
-      fechaInicio: obtenerFecha(),
-      tipo: 'Mensual',
-      precio: '200',
-      metodoPago: 'Efectivo',
-      promocion: ''
-    })
-    setClienteEditando(null)
-    setCobrarInscripcion(false)
-    setClienteExpandido(null)
-  }
+  setFormulario({
+    nombre: '',
+    telefono: '',
+    fechaInicio: obtenerFecha(),
+    tipo: 'Mensual',
+    precio: '200',
+    metodoPago: 'Efectivo',
+    promocion: ''
+  })
+
+  setClienteEditando(null)
+  setCobrarInscripcion(false)
+  setClienteExpandido(null)
+  setMostrarFormulario(false)
+}
 
   function guardarCliente(evento) {
     evento.preventDefault()
@@ -821,9 +1281,7 @@ useEffect(() => {
                   fechaInicio: formulario.fechaInicio,
                   fechaFin: nuevoVencimiento,
                   tipo: formulario.tipo,
-                  precio: precioCobrado,
-precioMembresia: precioFinal,
-inscripcion: cobrarInscripcion ? 50 : 0,
+                  precio: precioFinal,
                   metodoPago: formulario.metodoPago,
                   promocion: promocionSeleccionada?.nombre || ''
                 }
@@ -864,8 +1322,7 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
         fechaInicio: formulario.fechaInicio,
         fechaFin: fechaVencimiento,
         tipo: formulario.tipo,
-        precio: precioFinal,
-        metodoPago: formulario.metodoPago,
+precio: precioCobrado,        metodoPago: formulario.metodoPago,
         promocion: promocionSeleccionada?.nombre || '',
         fechaPago: obtenerFecha(),
         modalidad: 'Inscripción inicial'
@@ -883,6 +1340,7 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
       promocion: ''
     })
     setMostrarFormulario(false)
+    setCobrarInscripcion(false)
   }
 
   function abrirRenovacion(cliente) {
@@ -1336,7 +1794,7 @@ onClick={cambiarTema}      title={modoOscuro ? 'Activar modo claro' : 'Activar m
                             <Users size={18} />
                           </div>
                           <div>
-                            <strong>{cliente.nombre}</strong>
+                            <strong>{obtenerNombreCorto(cliente.nombre)}</strong>
                             <span>{cliente.telefono}</span>
                           </div>
                         </div>
@@ -1396,8 +1854,8 @@ onClick={cambiarTema}      title={modoOscuro ? 'Activar modo claro' : 'Activar m
 
               <div className="stat-card">
                 <p>INGRESOS DEL MES</p>
-                <h2>Q{ingresosMes.toFixed(2)}</h2>
-                <small>Pagos registrados</small>
+                <h2>Q{ingresosMesTotal.toFixed(2)}</h2>
+                <small>Membresías Q{ingresosMes.toFixed(2)} · Ventas Q{ingresosVentasDiariasMes.toFixed(2)}</small>
               </div>
             </div>
 
@@ -2261,202 +2719,656 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
         )}
 
         {/* REPORTES */}
-        {seccion === 'Reportes' && (
+{seccion === 'Reportes' && (
+  <>
+    <div className="section-actions">
+      <div>
+        <h2>Centro de reportes</h2>
+        <p>Consulta el rendimiento del gimnasio y reporta cualquier problema.</p>
+      </div>
+    </div>
+
+    <div className="report-tabs">
+      <button
+        type="button"
+        className="report-tab active"
+        onClick={() => setMesGenerado(mesGenerado)}
+      >
+        <BarChart3 size={17} />
+        Resumen mensual
+      </button>
+      <button
+        type="button"
+        className="report-tab"
+        onClick={() => {
+          document.getElementById('formulario-reporte-problema')?.scrollIntoView({
+            behavior: 'smooth'
+          })
+        }}
+      >
+        <AlertTriangle size={17} />
+        Reportar un problema
+      </button>
+    </div>
+
+    <div className="content-card report-period-card">
+      <div>
+        <h3>Generar resumen mensual</h3>
+        <p>Selecciona cualquier mes para consultar sus resultados históricos.</p>
+      </div>
+
+      <div className="report-period-controls">
+        <label>
+          Mes del informe
+          <SelectorMes
+            value={mesSeleccionado}
+            onChange={setMesSeleccionado}
+          />
+        </label>
+
+        <button
+          type="button"
+          className="primary-button"
+          disabled={!mesSeleccionado || mesSeleccionado > obtenerFecha().slice(0, 7)}
+          onClick={() => setMesGenerado(mesSeleccionado)}
+        >
+          <BarChart3 size={17} />
+          Generar resumen
+        </button>
+      </div>
+    </div>
+
+    {!mesGenerado ? (
+      <div className="content-card report-empty">
+        <BarChart3 size={35} />
+        <h3>Tu resumen mensual aparecerá aquí</h3>
+        <p>Selecciona un mes y presiona «Generar resumen» para consultar los resultados.</p>
+      </div>
+    ) : (
+      <>
+        <div className="report-heading">
+          <div>
+            <span>INFORME GENERADO</span>
+            <h2>{nombreMesReporte.charAt(0).toUpperCase() + nombreMesReporte.slice(1)}</h2>
+          </div>
+          <span className="report-payment-count">
+            {pagosDelMes.length} pagos registrados
+          </span>
+        </div>
+
+        <div className="report-kpi-grid">
+          <div className="report-kpi">
+            <span>INGRESOS TOTALES</span>
+            <h2>Q{ingresosReporte.toFixed(2)}</h2>
+            <small>
+              {diferenciaIngresos >= 0 ? '+' : ''}
+              Q{diferenciaIngresos.toFixed(2)} frente al mes anterior
+            </small>
+            <small>
+              Membresías Q{ingresosMembresiasReporte.toFixed(2)} · Ventas diarias Q{ingresosVentasReporte.toFixed(2)}
+            </small>
+          </div>
+
+          <div className="report-kpi">
+            <span>PAGOS REGISTRADOS</span>
+            <h2>{pagosDelMes.length}</h2>
+            <small>Inscripciones y renovaciones</small>
+          </div>
+
+          <div className="report-kpi">
+            <span>NUEVAS INSCRIPCIONES</span>
+            <h2>{nuevasInscripciones}</h2>
+            <small>Clientes registrados inicialmente</small>
+          </div>
+
+          <div className="report-kpi">
+            <span>RENOVACIONES</span>
+            <h2>{renovacionesReporte}</h2>
+            <small>Pagos de renovación</small>
+          </div>
+        </div>
+
+        <div className="content-card report-comparison-card">
+          <div>
+            <h3>Comparación con el mes anterior</h3>
+            <p>
+              Ingresos de {new Date(
+                Number(fechaMesAnterior.slice(0, 4)),
+                Number(fechaMesAnterior.slice(5, 7)) - 1,
+                1
+              ).toLocaleDateString('es-GT', { month: 'long', year: 'numeric' })}
+            </p>
+          </div>
+
+          <div className="report-comparison-values">
+            <strong>Q{ingresosMesAnterior.toFixed(2)}</strong>
+            <span className={
+              diferenciaIngresos > 0
+                ? 'report-positive'
+                : diferenciaIngresos < 0
+                  ? 'report-negative'
+                  : ''
+            }>
+              {diferenciaIngresos > 0 ? '+' : ''}
+              {porcentajeCambio.toFixed(1)}%
+            </span>
+          </div>
+        </div>
+
+        <div className="content-card report-chart-card">
+          <div className="report-card-heading">
+            <div>
+              <h3>Ingresos diarios</h3>
+              <p>Dinero recibido en cada día del mes.</p>
+            </div>
+            <span>En quetzales</span>
+          </div>
+
+          {pagosDelMes.length === 0 && ingresosVentasReporte === 0 ? (
+            <p className="empty">No hay pagos registrados durante este mes.</p>
+          ) : (
+            <>
+              <div className="report-daily-chart">
+                {ventasDiarias.map(dia => (
+                  <div className="report-daily-column" key={dia.dia}>
+                    <div className="report-daily-bar-area">
+                      <div
+                        className={`report-daily-bar ${dia.ingresos === maximoDiario && dia.ingresos > 0 ? 'report-bar-highlight' : ''}`}
+                        style={{
+                          height: `${maximoDiario > 0 ? Math.max(dia.ingresos > 0 ? 4 : 0, (dia.ingresos / maximoDiario) * 100) : 0}%`
+                        }}
+                        title={`${dia.dia}: Q${dia.ingresos.toFixed(2)} · ${dia.cantidad} pagos · Ventas diarias Q${dia.ingresosVentas.toFixed(2)}`}
+                      />
+                    </div>
+                    <span>{dia.dia % 5 === 0 || dia.dia === 1 || dia.dia === diasDelMes ? dia.dia : ''}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="report-chart-legend">
+                <span>Ingresos por día</span>
+                <strong>Máximo: Q{maximoDiario.toFixed(2)}</strong>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="report-two-columns">
+          <div className="content-card report-chart-card">
+            <div className="report-card-heading">
+              <div>
+                <h3>Ventas por semana</h3>
+                <p>Comparación de ingresos semanales.</p>
+              </div>
+            </div>
+
+            {ventasSemanales.map(semana => (
+              <div className="report-week-row" key={semana.semana}>
+                <div className="report-week-info">
+                  <strong>Semana {semana.semana}</strong>
+                  <span>Días {semana.inicio} al {semana.fin}</span>
+                </div>
+                <div className="report-week-track">
+                  <div
+                    className="report-week-fill"
+                    style={{
+                      width: `${maximoSemanal > 0 ? (semana.ingresos / maximoSemanal) * 100 : 0}%`
+                    }}
+                  />
+                </div>
+                <strong>Q{semana.ingresos.toFixed(2)}</strong>
+              </div>
+            ))}
+          </div>
+
+          <div className="content-card report-chart-card">
+            <div className="report-card-heading">
+              <div>
+                <h3>Métodos de pago</h3>
+                <p>Distribución de los pagos recibidos.</p>
+              </div>
+            </div>
+
+            {metodosPagoReporte.map(metodo => (
+              <div className="report-method-row" key={metodo.nombre}>
+                <div>
+                  <strong>{metodo.nombre}</strong>
+                  <span>{metodo.cantidad} pagos</span>
+                </div>
+                <strong>Q{metodo.ingresos.toFixed(2)}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="content-card report-highlights">
+          <h3>Datos destacados del mes</h3>
+
+          <div className="report-highlight-grid">
+            <div>
+              <span>DÍA CON MÁS INGRESOS</span>
+              <strong>
+                {diaMayorIngreso.ingresos > 0
+                  ? `Día ${diaMayorIngreso.dia}`
+                  : 'Sin registros'}
+              </strong>
+              <small>Q{diaMayorIngreso.ingresos.toFixed(2)} recibidos</small>
+            </div>
+
+            <div>
+              <span>DÍA CON MÁS PAGOS</span>
+              <strong>
+                {diaMasPagos.cantidad > 0
+                  ? `Día ${diaMasPagos.dia}`
+                  : 'Sin registros'}
+              </strong>
+              <small>{diaMasPagos.cantidad} pagos registrados</small>
+            </div>
+          </div>
+
+          <p className="report-disclaimer">
+            Estos datos representan movimientos de pago, no asistencia.
+            Para conocer qué día llegan más personas al gimnasio sería necesario
+            registrar las entradas de los clientes.
+          </p>
+        </div>
+      </>
+    )}
+
+    <div id="formulario-reporte-problema">
+      <div className="section-actions report-problem-heading">
+        <div>
+          <h2>Reportar un problema</h2>
+          <p>Ayúdanos a mejorar Zona Fitness Club informando cualquier error que encuentres.</p>
+        </div>
+      </div>
+
+      <div className="content-card form-card">
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '22px'
+        }}>
+          <div style={{
+            width: '45px',
+            height: '45px',
+            borderRadius: '12px',
+            background: '#fff4d6',
+            color: '#b98500',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <AlertTriangle size={23} />
+          </div>
+
+          <div>
+            <h3 style={{ margin: 0 }}>Formulario de reporte</h3>
+            <p style={{ margin: '5px 0 0' }}>
+              Describe qué ocurrió para que podamos revisarlo.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={enviarReporte}>
+          <div className="form-grid">
+            <label>
+              Tu nombre
+              <input
+                type="text"
+                placeholder="Escribe tu nombre (opcional)"
+                value={reporte.nombre}
+                onChange={e => {
+                  setReporte({ ...reporte, nombre: e.target.value })
+                  setResultadoReporte(null)
+                }}
+              />
+            </label>
+
+            <label>
+              ¿En qué sección ocurrió el error?
+              <SelectorOpcion
+                value={reporte.seccion}
+                placeholder="Seleccionar sección"
+                options={[
+                  'Inicio',
+                  'Clientes',
+                  'Membresías',
+                  'Promociones',
+                  'Pagos',
+                  'Mediciones',
+                  'Reportes',
+                  'Otra sección'
+                ]}
+                onChange={valor => {
+                  setReporte({ ...reporte, seccion: valor })
+                  setResultadoReporte(null)
+                }}
+              />
+            </label>
+
+            <label style={{ gridColumn: '1 / -1' }}>
+              Describe el problema
+              <textarea
+                rows="6"
+                placeholder="Explica qué estabas haciendo, qué ocurrió y qué esperabas que sucediera..."
+                value={reporte.descripcion}
+                onChange={e => {
+                  setReporte({ ...reporte, descripcion: e.target.value })
+                  setResultadoReporte(null)
+                }}
+                required
+                minLength={10}
+                style={{
+                  width: '100%',
+                  padding: '13px 14px',
+                  border: '1px solid #dedede',
+                  borderRadius: '9px',
+                  fontFamily: 'inherit',
+                  fontSize: '13px',
+                  resize: 'vertical',
+                  outlineColor: '#e5b400'
+                }}
+              />
+              <small style={{
+                display: 'block',
+                marginTop: '7px',
+                color: '#888',
+                fontWeight: 400
+              }}>
+                Mínimo 10 caracteres.
+              </small>
+            </label>
+          </div>
+
+          {resultadoReporte && (
+            <div
+              role="status"
+              aria-live="polite"
+              style={{
+                marginTop: '20px',
+                padding: '14px 16px',
+                borderRadius: '9px',
+                background: resultadoReporte.tipo === 'exito' ? '#eaf7ed' : '#fff0ee',
+                color: resultadoReporte.tipo === 'exito' ? '#24743b' : '#b83227',
+                fontSize: '13px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '9px'
+              }}
+            >
+              {resultadoReporte.tipo === 'exito'
+                ? <Check size={18} />
+                : <AlertTriangle size={18} />}
+              <span>{resultadoReporte.mensaje}</span>
+            </div>
+          )}
+
+          <div className="form-buttons">
+            <button
+              type="button"
+              className="cancel-button"
+              disabled={enviandoReporte}
+              onClick={() => {
+                setReporte({
+                  nombre: '',
+                  seccion: '',
+                  descripcion: ''
+                })
+                setResultadoReporte(null)
+              }}
+            >
+              Limpiar formulario
+            </button>
+
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={
+                enviandoReporte ||
+                !reporte.seccion ||
+                reporte.descripcion.trim().length < 10
+              }
+            >
+              {enviandoReporte ? (
+                <>
+                  <RefreshCw size={17} />
+                  Enviando reporte...
+                </>
+              ) : (
+                <>
+                  <MessageCircle size={17} />
+                  Enviar reporte
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div className="content-card" style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '13px'
+      }}>
+        <Bell size={20} color="#b98500" />
+        <div>
+          <h3 style={{ marginBottom: '6px' }}>¿Qué sucede al enviar un reporte?</h3>
+          <p style={{
+            color: '#777',
+            fontSize: '13px',
+            lineHeight: 1.7
+          }}>
+            El reporte llegará al correo del administrador con la descripción,
+            la sección donde ocurrió el problema y la fecha y hora del envío.
+          </p>
+        </div>
+      </div>
+    </div>
+  </>
+)}
+
+        {/* MEDICIONES */}
+        {seccion === 'Ventas diarias' && (
           <>
             <div className="section-actions">
               <div>
-                <h2>Reportar un problema</h2>
-                <p>Ayúdanos a mejorar Zona Fitness Club informando cualquier error que encuentres.</p>
+                <h2>Registro de ventas y visitas</h2>
+                <p>Registra las visitas y los productos vendidos cada día.</p>
+              </div>
+              <button type="button" className="primary-button" onClick={() => setMostrarNuevoProducto(!mostrarNuevoProducto)}>
+                <Plus size={17} /> Agregar producto
+              </button>
+            </div>
+
+            {mostrarNuevoProducto && (
+              <div className="content-card form-card daily-product-form">
+                <h3>Agregar nuevo producto</h3>
+                <p>Define el nombre y el precio de venta. Luego aparecerá en el registro diario.</p>
+                <form onSubmit={agregarProductoVenta}>
+                  <div className="form-grid">
+                    <label>Nombre del producto
+                      <input value={nuevoProducto.nombre} onChange={e => setNuevoProducto(actual => ({ ...actual, nombre: e.target.value }))} placeholder="Ej. Barra de proteína" required />
+                    </label>
+                    <label>Precio de venta (Q)
+                      <input type="number" min="0.01" step="0.01" value={nuevoProducto.precio} onChange={e => setNuevoProducto(actual => ({ ...actual, precio: e.target.value }))} placeholder="0.00" required />
+                    </label>
+                  </div>
+                  <div className="form-buttons">
+                    <button type="button" className="cancel-button" onClick={() => setMostrarNuevoProducto(false)}>Cancelar</button>
+                    <button type="submit" className="primary-button"><Plus size={16} /> Guardar producto</button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            <div className="content-card daily-sales-date-card">
+              <label>Fecha del registro
+                <SelectorFecha value={fechaVenta} onChange={setFechaVenta} />
+              </label>
+              <div className="daily-sales-total">
+                <span>INGRESOS DEL DÍA</span>
+                <strong>Q{ingresosVentasDia.toFixed(2)}</strong>
               </div>
             </div>
 
-            <div className="content-card form-card">
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                marginBottom: '22px'
-              }}>
-                <div style={{
-                  width: '45px',
-                  height: '45px',
-                  borderRadius: '12px',
-                  background: '#fff4d6',
-                  color: '#b98500',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <AlertTriangle size={23} />
-                </div>
-
-                <div>
-                  <h3 style={{ margin: 0 }}>Formulario de reporte</h3>
-                  <p style={{ margin: '5px 0 0' }}>
-                    Describe qué ocurrió para que podamos revisarlo.
-                  </p>
-                </div>
-              </div>
-
-              <form onSubmit={enviarReporte}>
-                <div className="form-grid">
-                  <label>
-                    Tu nombre
-                    <input
-                      type="text"
-                      placeholder="Escribe tu nombre (opcional)"
-                      value={reporte.nombre}
-                      onChange={e => {
-                        setReporte({ ...reporte, nombre: e.target.value })
-                        setResultadoReporte(null)
-                      }}
-                    />
-                  </label>
-
-                  <label>
-                    ¿En qué sección ocurrió el error?
-                    <SelectorOpcion
-                      value={reporte.seccion}
-                      placeholder="Seleccionar sección"
-                      options={[
-                        'Inicio',
-                        'Clientes',
-                        'Membresías',
-                        'Promociones',
-                        'Pagos',
-                        'Mediciones',
-                        'Reportes',
-                        'Otra sección'
-                      ]}
-                      onChange={valor => {
-                        setReporte({ ...reporte, seccion: valor })
-                        setResultadoReporte(null)
-                      }}
-                    />
-                  </label>
-
-                  <label style={{ gridColumn: '1 / -1' }}>
-                    Describe el problema
-                    <textarea
-                      rows="6"
-                      placeholder="Explica qué estabas haciendo, qué ocurrió y qué esperabas que sucediera..."
-                      value={reporte.descripcion}
-                      onChange={e => {
-                        setReporte({ ...reporte, descripcion: e.target.value })
-                        setResultadoReporte(null)
-                      }}
-                      required
-                      minLength={10}
-                      style={{
-                        width: '100%',
-                        padding: '13px 14px',
-                        border: '1px solid #dedede',
-                        borderRadius: '9px',
-                        fontFamily: 'inherit',
-                        fontSize: '13px',
-                        resize: 'vertical',
-                        outlineColor: '#e5b400'
-                      }}
-                    />
-                    <small style={{
-                      display: 'block',
-                      marginTop: '7px',
-                      color: '#888',
-                      fontWeight: 400
-                    }}>
-                      Mínimo 10 caracteres.
-                    </small>
-                  </label>
-                </div>
-
-                {resultadoReporte && (
-                  <div
-                    role="status"
-                    aria-live="polite"
-                    style={{
-                      marginTop: '20px',
-                      padding: '14px 16px',
-                      borderRadius: '9px',
-                      background: resultadoReporte.tipo === 'exito' ? '#eaf7ed' : '#fff0ee',
-                      color: resultadoReporte.tipo === 'exito' ? '#24743b' : '#b83227',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '9px'
-                    }}
-                  >
-                    {resultadoReporte.tipo === 'exito'
-                      ? <Check size={18} />
-                      : <AlertTriangle size={18} />}
-                    <span>{resultadoReporte.mensaje}</span>
-                  </div>
-                )}
-
-                <div className="form-buttons">
+            <div className="content-card daily-sales-list-card">
+              <div className="daily-sales-list-heading">
+                <div className="daily-sales-heading-main">
                   <button
                     type="button"
-                    className="cancel-button"
-                    disabled={enviandoReporte}
-                    onClick={() => {
-                      setReporte({
-                        nombre: '',
-                        seccion: '',
-                        descripcion: ''
-                      })
-                      setResultadoReporte(null)
-                    }}
+                    className={`daily-sales-catalog-toggle ${modoEdicionCatalogo ? 'is-active' : ''}`}
+                    onClick={() => setModoEdicionCatalogo(actual => !actual)}
+                    aria-pressed={modoEdicionCatalogo}
                   >
-                    Limpiar formulario
+                    <Pencil size={14} />
+                    {modoEdicionCatalogo ? 'Terminar' : 'Editar'}
                   </button>
-
-                  <button
-                    type="submit"
-                    className="primary-button"
-                    disabled={
-                      enviandoReporte ||
-                      !reporte.seccion ||
-                      reporte.descripcion.trim().length < 10
-                    }
-                  >
-                    {enviandoReporte ? (
-                      <>
-                        <RefreshCw size={17} />
-                        Enviando reporte...
-                      </>
-                    ) : (
-                      <>
-                        <MessageCircle size={17} />
-                        Enviar reporte
-                      </>
-                    )}
-                  </button>
+                  <div>
+                    <h3>Detalle de ventas</h3>
+                    <p>{modoEdicionCatalogo ? 'Selecciona un producto para cambiar su nombre, precio o eliminarlo.' : 'Ingresa la cantidad de visitas y productos vendidos.'}</p>
+                  </div>
                 </div>
-              </form>
-            </div>
+                <span>IMPORTE</span>
+              </div>
 
-            <div className="content-card" style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '13px'
-            }}>
-              <Bell size={20} color="#b98500" />
-              <div>
-                <h3 style={{ marginBottom: '6px' }}>¿Qué sucede al enviar un reporte?</h3>
-                <p style={{
-                  color: '#777',
-                  fontSize: '13px',
-                  lineHeight: 1.7
-                }}>
-                  El reporte llegará al correo del administrador con la descripción,
-                  la sección donde ocurrió el problema y la fecha y hora del envío.
-                </p>
+              <div className="daily-sales-list">
+                {productosActivosVenta.map(producto => ({
+                    key: producto.tipo === 'base' ? producto.clave : `producto-${producto.id}`,
+                    productoId: producto.id,
+                    clave: producto.clave,
+                    nombre: producto.nombre,
+                    detalle: producto.detalle || 'Producto adicional',
+                    precio: Number(producto.precio || 0),
+                    icono: producto.icono === 'Users' ? Users : Package,
+                    tipo: producto.tipo === 'base' ? 'base' : 'producto'
+                  }))
+                  .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }))
+                  .map(item => {
+                    const Icono = item.icono
+                    const cantidadActual = item.tipo === 'base'
+                      ? formularioVentas[item.clave]
+                      : (formularioVentas.productos?.[item.productoId] ?? '0')
+                    const cantidad = Number(cantidadActual || 0)
+                    const actualizarCantidad = e => {
+                      const valor = e.target.value
+                      if (item.tipo === 'base') {
+                        setFormularioVentas(actual => ({ ...actual, [item.key]: valor }))
+                      } else {
+                        setFormularioVentas(actual => ({
+                          ...actual,
+                          productos: { ...actual.productos, [item.productoId]: valor }
+                        }))
+                      }
+                    }
+
+                    return (
+                      <div className={`daily-sales-row ${modoEdicionCatalogo ? "catalog-editing" : ""}`} key={item.key}>
+                        <div className="daily-sales-row-product">
+                          <span className="daily-sales-icon"><Icono size={19} /></span>
+                          <div><strong>{item.nombre}</strong><small>{(item.detalle)} · Q{item.precio.toFixed(2)} c/u</small></div>
+                        </div>
+                        <label className="daily-sales-quantity">
+                          <span>Cantidad</span>
+                          <input type="number" min="0" step="1" inputMode="numeric" value={cantidadActual} onChange={actualizarCantidad} />
+                        </label>
+                        <strong className="daily-sales-row-total">Q{(cantidad * item.precio).toFixed(2)}</strong>
+                        {modoEdicionCatalogo && (
+                          <button
+                            type="button"
+                            className="daily-sales-edit-product"
+                            onClick={() => abrirEdicionProductoVenta(productosVenta.find(producto => producto.id === item.productoId))}
+                          >
+                            <Pencil size={14} /> Editar
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
               </div>
             </div>
+
+            <div className="content-card daily-sales-save-card">
+              <div><h3>Total del registro</h3><p>Confirma para guardar las cantidades correspondientes a {formatearFecha(fechaVenta)}.</p></div>
+              <div className="daily-sales-save-action">
+                <strong>Q{ingresosVentasDia.toFixed(2)}</strong>
+                <button type="button" className="primary-button" onClick={guardarVentasDia}><Save size={17} /> Guardar registro</button>
+              </div>
+              {avisoVentas && <p className="daily-sales-notice"><Check size={15} /> {avisoVentas}</p>}
+            </div>
+
+            <div className="content-card">
+              <h3>Historial de registros</h3>
+              <p>Resumen de las fechas que ya tienen ventas o visitas registradas.</p>
+              {registrosVentas.length === 0 ? <p className="empty">Todavía no hay registros diarios.</p> : (
+                <div className="table-container">
+                  <table><thead><tr><th>FECHA</th><th>VISITAS</th><th>AGUA</th><th>PROTEÍNA</th><th>CREATINA</th><th>INGRESOS</th></tr></thead>
+                    <tbody>{[...registrosVentas].sort((a, b) => b.fecha.localeCompare(a.fecha)).map(registro => {
+                      const total = registro.precios
+                        ? productosVenta.reduce((suma, producto) => {
+                            const clave = producto.tipo === 'base' ? producto.clave : producto.id
+                            const cantidad = producto.tipo === 'base'
+                              ? Number(registro[producto.clave] || 0)
+                              : Number(registro.productos?.[producto.id] || 0)
+                            return suma + cantidad * Number(registro.precios[clave] ?? producto.precio ?? 0)
+                          }, 0)
+                        : Number(registro.visitas || 0) * 15 + Number(registro.agua || 0) * 8 + Number(registro.proteina || 0) * 13 + Number(registro.creatina || 0) * 5 + productosVenta.filter(producto => producto.tipo !== 'base').reduce((suma, producto) => suma + Number(registro.productos?.[producto.id] || 0) * Number(producto.precio || 0), 0)
+                      return <tr key={registro.fecha}><td><strong>{formatearFecha(registro.fecha)}</strong></td><td>{registro.visitas || 0}</td><td>{registro.agua || 0}</td><td>{registro.proteina || 0}</td><td>{registro.creatina || 0}</td><td><strong>Q{total.toFixed(2)}</strong></td></tr>
+                    })}</tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {productoEditando && (
+              <div className="modal-overlay" onClick={() => setProductoEditando(null)}>
+                <div className="confirmation-modal product-edit-modal" role="dialog" aria-modal="true" aria-labelledby="edit-product-title" onClick={evento => evento.stopPropagation()}>
+                  <button type="button" className="modal-close" aria-label="Cerrar" onClick={() => setProductoEditando(null)}><X size={18} /></button>
+                  <span className="modal-icon"><Pencil size={24} /></span>
+                  <h2 id="edit-product-title">Editar producto</h2>
+                  <p className="modal-description">Modifica el nombre o el precio. Los cambios se aplicarán a los próximos registros.</p>
+                  <form onSubmit={guardarEdicionProductoVenta}>
+                    <div className="form-grid">
+                      <label>Nombre del producto
+                        <input value={formularioProductoEdicion.nombre} onChange={e => setFormularioProductoEdicion(actual => ({ ...actual, nombre: e.target.value }))} required />
+                      </label>
+                      <label>Precio de venta (Q)
+                        <input type="number" min="0.01" step="0.01" value={formularioProductoEdicion.precio} onChange={e => setFormularioProductoEdicion(actual => ({ ...actual, precio: e.target.value }))} required />
+                      </label>
+                    </div>
+                    <div className="modal-actions product-edit-actions">
+                      <button type="button" className="modal-delete-button" onClick={() => { setProductoAEliminar(productoEditando); setProductoEditando(null) }}><Trash2 size={15} /> Eliminar</button>
+                      <button type="button" className="modal-cancel-button" onClick={() => setProductoEditando(null)}>Cancelar</button>
+                      <button type="submit" className="modal-primary-button"><Check size={15} /> Guardar cambios</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {productoAEliminar && (
+              <div className="modal-overlay" onClick={() => setProductoAEliminar(null)}>
+                <div className="confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="delete-product-title" onClick={evento => evento.stopPropagation()}>
+                  <button type="button" className="modal-close" aria-label="Cerrar" onClick={() => setProductoAEliminar(null)}><X size={18} /></button>
+                  <span className="modal-icon modal-icon-danger"><Trash2 size={25} /></span>
+                  <h2 id="delete-product-title">¿Eliminar este producto?</h2>
+                  <p className="modal-description">Ya no aparecerá en los registros de ventas nuevos. Los registros anteriores conservarán sus importes.</p>
+                  <div className="modal-client-info">
+                    <span>PRODUCTO SELECCIONADO</span>
+                    <strong>{(productoAEliminar.nombre)}</strong>
+                    <small>Q{Number(productoAEliminar.precio || 0).toFixed(2)} por unidad</small>
+                  </div>
+                  <div className="modal-actions">
+                    <button type="button" className="modal-cancel-button" onClick={() => setProductoAEliminar(null)}>Cancelar</button>
+                    <button type="button" className="modal-delete-button" onClick={confirmarEliminarProductoVenta}><Trash2 size={16} /> Sí, eliminar</button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
 
-        {/* MEDICIONES */}
         {seccion === 'Mediciones' && (
           <div className="content-card">
             <h2>Mediciones</h2>
