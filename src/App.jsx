@@ -1,4 +1,3 @@
-
 import { Fragment, useState, useEffect, useRef } from 'react'
 import {
   LayoutDashboard, Users, CalendarCheck, CreditCard, Ruler,
@@ -101,6 +100,116 @@ function obtenerHistorial(cliente) {
 function obtenerUltimaMembresia(cliente) {
   const historial = obtenerHistorial(cliente)
   return historial[historial.length - 1]
+}
+
+// RECIBOS DIGITALES DE PAGO
+function obtenerSiguienteNumeroRecibo(clientes) {
+  let mayor = 0
+
+  clientes.forEach(cliente => {
+    ;(cliente.historialMembresias || []).forEach(registro => {
+      const numero = Number(registro.numeroRecibo)
+      if (Number.isFinite(numero) && numero > mayor) mayor = numero
+    })
+  })
+
+  return mayor + 1
+}
+
+function formatearNumeroRecibo(numero) {
+  return String(numero).padStart(6, '0')
+}
+
+function obtenerConceptoRecibo(registro) {
+  if (registro.tipo === 'Quincenal') return 'Quincena'
+  if (registro.tipo === 'Mensual') return 'Mensualidad'
+  return registro.tipo || 'Membresía'
+}
+
+async function crearImagenRecibo(registro, nombreCliente) {
+  const AMARILLO = '#FFD400'
+  const FUENTE = 'Montserrat, Arial, sans-serif'
+  const ancho = 900
+  const alto = 1360
+
+  try {
+    await Promise.all([
+      document.fonts.load(`800 40px ${FUENTE}`),
+      document.fonts.load(`600 30px ${FUENTE}`)
+    ])
+  } catch {
+    // Si la fuente no carga, se usa Arial y el recibo se genera igual
+  }
+
+  const lienzo = document.createElement('canvas')
+  lienzo.width = ancho
+  lienzo.height = alto
+  const ctx = lienzo.getContext('2d')
+
+  function texto(contenido, x, y, tamano, peso, color, alineacion = 'left', anchoMaximo = 740) {
+    let tamanoFinal = tamano
+    ctx.font = `${peso} ${tamanoFinal}px ${FUENTE}`
+    while (ctx.measureText(contenido).width > anchoMaximo && tamanoFinal > 16) {
+      tamanoFinal -= 1
+      ctx.font = `${peso} ${tamanoFinal}px ${FUENTE}`
+    }
+    ctx.fillStyle = color
+    ctx.textAlign = alineacion
+    ctx.fillText(contenido, x, y)
+  }
+
+  // Fondo y barra superior
+  ctx.fillStyle = '#0A0A0A'
+  ctx.fillRect(0, 0, ancho, alto)
+  ctx.fillStyle = AMARILLO
+  ctx.fillRect(0, 0, ancho, 16)
+
+  // Encabezado
+  texto('ZONA FITNESS CLUB', ancho / 2, 150, 56, 800, AMARILLO, 'center')
+  ctx.fillStyle = AMARILLO
+  ctx.fillRect(ancho / 2 - 150, 185, 300, 4)
+  texto('RECIBO DE PAGO', ancho / 2, 270, 38, 800, '#FFFFFF', 'center')
+  texto(`RECIBO No. ${formatearNumeroRecibo(registro.numeroRecibo)}`, ancho / 2, 325, 28, 600, '#BDBDBD', 'center')
+
+  // Datos del pago
+  const filas = [
+    ['CLIENTE', nombreCliente],
+    ['CONCEPTO', obtenerConceptoRecibo(registro)],
+    ['FECHA DE PAGO', formatearFecha(registro.fechaPago || registro.fechaInicio)],
+    ['VIGENCIA', `${formatearFecha(registro.fechaInicio)} al ${formatearFecha(registro.fechaFin)}`]
+  ]
+
+  filas.forEach(([etiqueta, valor], indice) => {
+    const y = 420 + indice * 120
+    texto(etiqueta, 80, y, 22, 600, AMARILLO)
+    texto(valor, 80, y + 46, 34, 600, '#FFFFFF')
+  })
+
+  // Monto destacado
+  ctx.strokeStyle = AMARILLO
+  ctx.lineWidth = 4
+  ctx.beginPath()
+  ctx.roundRect(80, 900, 740, 170, 18)
+  ctx.stroke()
+  texto(`Q${Number(registro.precio || 0).toFixed(2)}`, ancho / 2, 1012, 100, 800, AMARILLO, 'center', 680)
+
+  // Estado del pago
+  ctx.fillStyle = AMARILLO
+  ctx.beginPath()
+  ctx.roundRect(ancho / 2 - 190, 1100, 380, 70, 35)
+  ctx.fill()
+  texto('PAGO RECIBIDO', ancho / 2, 1146, 30, 800, '#0A0A0A', 'center')
+
+  // Mensaje final
+  texto('Gracias por formar parte de Zona Fitness Club.', ancho / 2, 1245, 26, 600, '#FFFFFF', 'center')
+  texto('Donde empieza tu cambio.', ancho / 2, 1295, 28, 800, AMARILLO, 'center')
+
+  return new Promise((resolver, rechazar) => {
+    lienzo.toBlob(
+      blob => (blob ? resolver(blob) : rechazar(new Error('No se pudo crear la imagen'))),
+      'image/png'
+    )
+  })
 }
 
 function SelectorOpcion({ value, options, onChange, placeholder }) {
@@ -506,6 +615,8 @@ useEffect(() => {
   const [busqueda, setBusqueda] = useState('')
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [aviso, setAviso] = useState(null)
+  const [generandoRecibo, setGenerandoRecibo] = useState(false)
+  const [errorRecibo, setErrorRecibo] = useState('')
 
   // ESTADOS DE REPORTES
   const [reporte, setReporte] = useState({
@@ -1393,6 +1504,7 @@ precio: precioCobrado,        metodoPago: formulario.metodoPago,
 
     const nuevoRegistro = {
       id: Date.now(),
+      numeroRecibo: obtenerSiguienteNumeroRecibo(clientes),
       fechaInicio,
       fechaFin,
       tipo: formularioRenovacion.tipo,
@@ -1427,6 +1539,64 @@ precio: precioCobrado,        metodoPago: formulario.metodoPago,
     )
 
     cerrarRenovacion()
+    setErrorRecibo('')
+    setAviso({
+      tipo: 'renovacionExitosa',
+      cliente: clienteActual,
+      registro: nuevoRegistro
+    })
+  }
+
+  async function generarReciboYEnviarWhatsApp() {
+    if (!aviso?.cliente || !aviso?.registro || generandoRecibo) return
+
+    const { cliente, registro } = aviso
+
+    if (!/^[0-9]{8}$/.test(cliente.telefono || '')) {
+      setErrorRecibo('El número de teléfono del cliente debe tener exactamente 8 dígitos para abrir WhatsApp.')
+      return
+    }
+
+    setGenerandoRecibo(true)
+    setErrorRecibo('')
+
+    try {
+      const imagen = await crearImagenRecibo(registro, cliente.nombre)
+      const nombreArchivo = `Recibo-${formatearNumeroRecibo(registro.numeroRecibo)}.png`
+
+      let copiado = false
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': imagen })])
+        copiado = true
+      } catch {
+        copiado = false
+      }
+
+      if (!copiado) {
+        const enlaceDescarga = document.createElement('a')
+        enlaceDescarga.href = URL.createObjectURL(imagen)
+        enlaceDescarga.download = nombreArchivo
+        enlaceDescarga.click()
+        setTimeout(() => URL.revokeObjectURL(enlaceDescarga.href), 1000)
+      }
+
+      const mensaje = `${obtenerSaludo()}, ${cliente.nombre}. Le compartimos su recibo de pago No. ${formatearNumeroRecibo(registro.numeroRecibo)} de Zona Fitness Club. ¡Gracias por su preferencia! 💪`
+      const url = `https://wa.me/502${cliente.telefono}?text=${encodeURIComponent(mensaje)}`
+      window.open(url, '_blank', 'noopener,noreferrer')
+
+      setAviso({
+        tipo: 'reciboGenerado',
+        cliente,
+        registro,
+        copiado,
+        nombreArchivo
+      })
+    } catch (error) {
+      console.error('Error generando el recibo:', error)
+      setErrorRecibo('No se pudo generar el recibo. Intenta de nuevo.')
+    } finally {
+      setGenerandoRecibo(false)
+    }
   }
 
   function cambiarEstadoCliente(cliente) {
@@ -3523,9 +3693,11 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                 ? 'modal-icon-danger'
                 : 'modal-icon-warning'
             }`}>
-              {aviso.tipo === 'confirmarRecordatorio'
+              {aviso.tipo === 'confirmarRecordatorio' || aviso.tipo === 'reciboGenerado'
                 ? <MessageCircle size={26} />
-                : <AlertTriangle size={27} />}
+                : aviso.tipo === 'renovacionExitosa'
+                  ? <Check size={27} />
+                  : <AlertTriangle size={27} />}
             </div>
 
             {aviso.tipo === 'duplicado' && (
@@ -3547,6 +3719,53 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
               <>
                 <h2 id="modal-title">{aviso.titulo}</h2>
                 <p className="modal-description">{aviso.mensaje}</p>
+                <button className="modal-primary-button" onClick={cerrarAviso}>Entendido</button>
+              </>
+            )}
+
+            {aviso.tipo === 'renovacionExitosa' && (
+              <>
+                <h2 id="modal-title">Renovación registrada</h2>
+                <p className="modal-description">
+                  La renovación de {aviso.cliente.nombre} se registró correctamente.
+                </p>
+                <div className="modal-client-info">
+                  <span>RECIBO No. {formatearNumeroRecibo(aviso.registro.numeroRecibo)}</span>
+                  <strong>{aviso.cliente.nombre}</strong>
+                  <small>
+                    Q{Number(aviso.registro.precio || 0).toFixed(2)} · Vigencia: {formatearFecha(aviso.registro.fechaInicio)} al {formatearFecha(aviso.registro.fechaFin)}
+                  </small>
+                </div>
+                {errorRecibo && <p className="modal-description">{errorRecibo}</p>}
+                <div className="modal-actions">
+                  <button className="modal-cancel-button" onClick={cerrarAviso}>
+                    Cerrar
+                  </button>
+                  <button
+                    className="modal-primary-button"
+                    onClick={generarReciboYEnviarWhatsApp}
+                    disabled={generandoRecibo}
+                  >
+                    <MessageCircle size={16} />
+                    {generandoRecibo ? 'Generando recibo...' : 'Generar recibo y enviar por WhatsApp'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {aviso.tipo === 'reciboGenerado' && (
+              <>
+                <h2 id="modal-title">Recibo listo para enviar</h2>
+                <p className="modal-description">
+                  {aviso.copiado
+                    ? `Se abrió WhatsApp con el chat de ${aviso.cliente.nombre}. El recibo ya está copiado: presiona Ctrl + V dentro del chat para pegarlo y luego presiona Enviar.`
+                    : `Se abrió WhatsApp con el chat de ${aviso.cliente.nombre}. No fue posible copiar el recibo, así que se descargó el archivo ${aviso.nombreArchivo}. Adjúntalo en el chat con el clip y presiona Enviar.`}
+                </p>
+                <div className="modal-client-info">
+                  <span>RECIBO No. {formatearNumeroRecibo(aviso.registro.numeroRecibo)}</span>
+                  <strong>{aviso.cliente.nombre}</strong>
+                  <small>Q{Number(aviso.registro.precio || 0).toFixed(2)}</small>
+                </div>
                 <button className="modal-primary-button" onClick={cerrarAviso}>Entendido</button>
               </>
             )}
