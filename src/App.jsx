@@ -1112,7 +1112,7 @@ const nombreMesReporte = mesGenerado
   }
 
   function prepararWhatsApp(cliente) {
-    const avisoPendiente = obtenerAvisoPendiente(cliente)
+    const avisoPendiente = obtenerAvisoPendiente(cliente) 
 
     if (!avisoPendiente) {
       setAviso({
@@ -1132,11 +1132,11 @@ const nombreMesReporte = mesGenerado
       return
     }
 
-    const mensaje = avisoPendiente.mensaje
-      .replaceAll('{saludo}', obtenerSaludo())
-      .replaceAll('{nombre}', cliente.nombre)
-      .replaceAll('{dias}', String(Math.abs(avisoPendiente.diasAntes)))
-
+   const mensaje = avisoPendiente.mensaje
+  .replaceAll('{saludo}', obtenerSaludo())
+  .replaceAll('{nombre}', cliente.nombre)
+  .replaceAll('{fecha_vencimiento}', formatearFecha(cliente.vencimiento))
+  .replaceAll('{dias}', String(Math.abs(avisoPendiente.diasAntes)))
     const url = `https://wa.me/502${cliente.telefono}?text=${encodeURIComponent(mensaje)}`
     window.open(url, '_blank', 'noopener,noreferrer')
 
