@@ -1,0 +1,468 @@
+/* ================================================
+   ZONA FITNESS CLUB · CONTROL DE ASISTENCIA
+   Estilos aislados para no interferir con App.css
+   ================================================ */
+
+.asistencia-filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.asistencia-campo { display: flex; flex-direction: column; gap: 6px; }
+.asistencia-campo > span { color: #a5a5a5; font-size: 12px; font-weight: 700; letter-spacing: .5px; }
+
+.asistencia-estado {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.asistencia-estado-abierto { background: #ffd400; color: #111; }
+.asistencia-estado-cerrado { background: #090909; color: #fff; }
+.asistencia-estado-no-abierto { background: #fde2e2; color: #9b1c1c; }
+.asistencia-estado-pendiente { background: #383838; color: #d0d0d0; }
+
+.asistencia-acciones { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 155px; }
+.asistencia-boton-secundario,
+.asistencia-boton-reabrir {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  min-height: 35px !important;
+  padding: 8px 12px !important;
+  border: 1px solid #444 !important;
+  border-radius: 8px !important;
+  background: #303030 !important;
+  color: #f5f5f5 !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease !important;}
+.asistencia-boton-secundario:hover { border-color: #f5c400 !important; background: #3a3520 !important; color: #f5c400 !important; }
+.asistencia-boton-reabrir { border-color: #f5c400 !important; background: #f5c400 !important; color: #111 !important; }
+.asistencia-boton-reabrir:hover { border-color: #dfb300 !important; background: #dfb300 !important; color: #111 !important; }
+.asistencia-boton-secundario:disabled,
+.asistencia-boton-reabrir:disabled { opacity: .55 !important; cursor: not-allowed !important; }
+.asistencia-sin-accion { color: #999; }
+
+.asistencia-mensaje-exito {
+  margin: 0 0 14px;
+  padding: 11px 14px;
+  border: 1px solid #285b3a;
+  border-radius: 9px;
+  background: #172b20;
+  color: #9be0b0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Modales: se montan directamente en document.body mediante createPortal */
+.asistencia-modal-fondo {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100vh !important;
+  box-sizing: border-box !important;
+  padding: 22px !important;
+  overflow-y: auto !important;
+  background: rgba(0, 0, 0, .76) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+}
+
+.asistencia-modal-fondo,
+.asistencia-modal-fondo * { box-sizing: border-box; }
+
+.asistencia-modal-fondo .asistencia-modal {
+  position: relative !important;
+  display: block !important;
+  flex: 0 1 560px !important;
+  width: min(560px, 100%) !important;
+  max-width: 560px !important;
+  max-height: calc(100dvh - 44px) !important;
+  margin: auto !important;
+  padding: 25px !important;
+  overflow: auto !important;
+  border: 1px solid #414141 !important;
+  border-radius: 16px !important;
+  background: #222 !important;
+  color: #f5f5f5 !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .6) !important;
+  font-family: 'Montserrat', sans-serif !important;
+  text-align: left !important;
+  isolation: isolate;
+}
+
+.asistencia-modal-fondo .asistencia-modal-historial { flex-basis: 590px !important; width: min(590px, 100%) !important; max-width: 590px !important; }
+.asistencia-modal-encabezado { display: flex !important; align-items: center !important; justify-content: space-between !important; margin: 0 0 18px !important; }
+.asistencia-modal-icono { display: grid !important; width: 44px !important; height: 44px !important; place-items: center !important; border-radius: 12px !important; background: rgba(245, 196, 0, .14) !important; color: #f5c400 !important; }
+.asistencia-modal-cerrar {
+  display: grid !important;
+  width: 36px !important;
+  height: 36px !important;
+  place-items: center !important;
+  padding: 0 !important;
+  border: 1px solid #454545 !important;
+  border-radius: 9px !important;
+  background: #303030 !important;
+  color: #eee !important;
+  cursor: pointer !important;
+}
+.asistencia-modal-cerrar:hover { border-color: #f5c400 !important; color: #f5c400 !important; }
+
+.asistencia-modal-fondo .asistencia-modal h3 {
+  margin: 0 0 9px !important;
+  color: #fff !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 19px !important;
+  font-weight: 800 !important;
+  line-height: 1.35 !important;
+}
+.asistencia-modal-fondo .asistencia-modal-descripcion {
+  margin: 0 0 20px !important;
+  color: #a6a6a6 !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 1.6 !important;
+}
+.asistencia-modal-label { display: block; margin: 0 0 7px; color: #d6d6d6; font-size: 12px; font-weight: 700; }
+.asistencia-modal-fondo .asistencia-modal textarea {
+  display: block !important;
+  width: 100% !important;
+  min-height: 90px !important;
+  padding: 11px 12px !important;
+  border: 1px solid #484848 !important;
+  border-radius: 9px !important;
+  outline: none !important;
+  background: #2d2d2d !important;
+  color: #fff !important;
+  font: inherit !important;
+  font-size: 13px !important;
+  resize: vertical !important;
+}
+.asistencia-modal-fondo .asistencia-modal textarea:focus { border-color: #f5c400 !important; box-shadow: 0 0 0 3px rgba(245, 196, 0, .13) !important; }
+
+.asistencia-historial-vacio {
+  margin: 0 !important;
+  padding: 22px 14px !important;
+  border: 1px solid #3b3b3b !important;
+  border-radius: 10px !important;
+  background: #2b2b2b !important;
+  color: #b7b7b7 !important;
+  text-align: center !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+.asistencia-historial-lista { display: flex !important; flex-direction: column !important; gap: 0 !important; max-height: 370px !important; overflow-y: auto !important; padding: 0 4px !important; }
+.asistencia-historial-evento { display: flex !important; align-items: flex-start !important; gap: 13px !important; padding: 15px 5px !important; border-bottom: 1px solid #3b3b3b !important; }
+.asistencia-historial-evento:last-child { border-bottom: 0 !important; }
+.asistencia-historial-punto { flex: 0 0 10px !important; width: 10px !important; height: 10px !important; margin: 5px 2px 0 !important; border-radius: 50% !important; background: #888 !important; }
+.asistencia-historial-apertura { background: #f5c400 !important; box-shadow: 0 0 0 4px rgba(245, 196, 0, .14) !important; }
+.asistencia-historial-cierre { background: #aaa !important; box-shadow: 0 0 0 4px rgba(170, 170, 170, .13) !important; }
+.asistencia-historial-reapertura { background: #35bd72 !important; box-shadow: 0 0 0 4px rgba(53, 189, 114, .14) !important; }
+.asistencia-historial-contenido { min-width: 0 !important; flex: 1 !important; }
+.asistencia-historial-titulo { display: flex !important; align-items: center !important; justify-content: space-between !important; flex-wrap: wrap !important; gap: 6px 12px !important; color: #fff !important; font-size: 13px !important; }
+.asistencia-historial-titulo strong { color: #fff !important; font-size: 13px !important; font-weight: 800 !important; }
+.asistencia-historial-titulo > span { display: inline-flex !important; align-items: center !important; gap: 5px !important; color: #a7a7a7 !important; font-size: 11px !important; }
+.asistencia-historial-contenido p { margin: 6px 0 0 !important; color: #c8c8c8 !important; font-size: 12px !important; line-height: 1.5 !important; }
+.asistencia-historial-contenido small { display: block !important; margin-top: 8px !important; padding: 9px 11px !important; border-radius: 8px !important; background: #303030 !important; color: #c8c8c8 !important; font-size: 11px !important; line-height: 1.5 !important; white-space: pre-wrap !important; overflow-wrap: anywhere !important; }
+.asistencia-modal-error { display: flex !important; align-items: flex-start !important; gap: 8px !important; margin: 12px 0 0 !important; color: #ff8585 !important; font-size: 12px !important; line-height: 1.5 !important; }
+.asistencia-modal-error svg { flex: 0 0 auto; margin-top: 1px; }
+
+.asistencia-modal-acciones { display: flex !important; justify-content: flex-end !important; flex-wrap: wrap !important; gap: 9px !important; margin: 22px 0 0 !important; padding-top: 16px !important; border-top: 1px solid #3c3c3c !important; }
+.asistencia-modal-acciones button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  min-height: 38px !important;
+  padding: 9px 16px !important;
+  border: 1px solid #4a4a4a !important;
+  border-radius: 8px !important;
+  background: #343434 !important;
+  color: #fff !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+}
+.asistencia-modal-acciones button:hover { border-color: #f5c400 !important; background: #403b27 !important; color: #f5c400 !important; }
+.asistencia-modal-acciones .asistencia-boton-reabrir { border-color: #f5c400 !important; background: #f5c400 !important; color: #111 !important; }
+.asistencia-modal-acciones .asistencia-boton-reabrir:hover { background: #dfb300 !important; color: #111 !important; }
+.asistencia-boton-confirmar { min-height: 38px !important; padding-inline: 14px !important; }
+
+@media (max-width: 700px) {
+  .asistencia-filtros { grid-template-columns: 1fr; gap: 12px; }
+  .asistencia-modal-fondo { align-items: center !important; padding: 12px !important; }
+  .asistencia-modal-fondo .asistencia-modal { max-height: calc(100dvh - 24px) !important; padding: 19px !important; }
+  .asistencia-modal-acciones { flex-direction: column-reverse !important; }
+  .asistencia-modal-acciones button { width: 100% !important; }
+}
+
+/* =========================================
+   CORRECCIÓN VISUAL: BOTÓN Y MODAL HISTORIAL
+   ========================================= */
+
+/* Botón Historial de la tabla */
+.asistencia-acciones .asistencia-boton-historial {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 36px !important;
+  padding: 8px 13px !important;
+  border: 1px solid #484848 !important;
+  border-radius: 8px !important;
+  background: #303030 !important;
+  color: #f5f5f5 !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+  transition: background .18s ease, border-color .18s ease, color .18s ease !important;
+}
+
+.asistencia-acciones .asistencia-boton-historial:hover {
+  border-color: #f5c400 !important;
+  background: #3a3520 !important;
+  color: #f5c400 !important;
+}
+
+.asistencia-acciones .asistencia-boton-historial svg {
+  width: 15px !important;
+  height: 15px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Fondo del modal: ocupa toda la pantalla */
+.asistencia-modal-fondo {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 20px !important;
+  overflow-y: auto !important;
+  background: rgba(0, 0, 0, .76) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  box-sizing: border-box !important;
+}
+
+.asistencia-modal-fondo,
+.asistencia-modal-fondo * {
+  box-sizing: border-box !important;
+}
+
+/* Ventana de historial */
+.asistencia-modal-fondo .asistencia-modal-historial {
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  max-width: 590px !important;
+  max-height: calc(100vh - 40px) !important;
+  margin: auto !important;
+  padding: 26px !important;
+  overflow-y: auto !important;
+  border: 1px solid #414141 !important;
+  border-radius: 16px !important;
+  background: #222 !important;
+  color: #f5f5f5 !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  text-align: left !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .6) !important;
+}
+
+/* Encabezado */
+.asistencia-modal-historial .asistencia-modal-encabezado {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin: 0 0 18px !important;
+}
+
+.asistencia-modal-historial h3 {
+  margin: 0 0 9px !important;
+  color: #fff !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 19px !important;
+  font-weight: 800 !important;
+  line-height: 1.35 !important;
+}
+
+.asistencia-modal-historial .asistencia-modal-descripcion {
+  margin: 0 0 20px !important;
+  color: #a6a6a6 !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 1.6 !important;
+}
+
+/* Lista de eventos */
+.asistencia-modal-historial .asistencia-historial-lista {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  max-height: 370px !important;
+  overflow-y: auto !important;
+  padding: 0 4px !important;
+}
+
+.asistencia-modal-historial .asistencia-historial-evento {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 13px !important;
+  padding: 15px 5px !important;
+  border-bottom: 1px solid #3b3b3b !important;
+}
+
+.asistencia-modal-historial .asistencia-historial-evento:last-child {
+  border-bottom: 0 !important;
+}
+
+.asistencia-modal-historial .asistencia-historial-contenido {
+  min-width: 0 !important;
+  flex: 1 !important;
+  color: #f5f5f5 !important;
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+.asistencia-modal-historial .asistencia-historial-titulo {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 6px 12px !important;
+  color: #fff !important;
+  font-size: 13px !important;
+}
+
+.asistencia-modal-historial .asistencia-historial-titulo strong {
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+}
+
+.asistencia-modal-historial .asistencia-historial-titulo span {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  color: #a7a7a7 !important;
+  font-size: 11px !important;
+}
+
+.asistencia-modal-historial .asistencia-historial-contenido p {
+  margin: 6px 0 0 !important;
+  color: #c8c8c8 !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+
+.asistencia-modal-historial .asistencia-historial-contenido small {
+  display: block !important;
+  margin-top: 8px !important;
+  padding: 9px 11px !important;
+  border-radius: 8px !important;
+  background: #303030 !important;
+  color: #c8c8c8 !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 11px !important;
+  line-height: 1.5 !important;
+}
+
+/* Mensajes de carga y errores */
+.asistencia-modal-historial .asistencia-historial-vacio {
+  margin: 0 !important;
+  padding: 22px 14px !important;
+  border: 1px solid #3b3b3b !important;
+  border-radius: 10px !important;
+  background: #2b2b2b !important;
+  color: #b7b7b7 !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 12px !important;
+  text-align: center !important;
+}
+
+.asistencia-modal-historial .asistencia-modal-error {
+  color: #ff8585 !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 12px !important;
+}
+
+/* Pie del modal */
+.asistencia-modal-historial .asistencia-modal-acciones {
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin: 22px 0 0 !important;
+  padding-top: 16px !important;
+  border-top: 1px solid #3c3c3c !important;
+}
+
+.asistencia-modal-historial .asistencia-modal-acciones button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 38px !important;
+  padding: 9px 18px !important;
+  border: 1px solid #484848 !important;
+  border-radius: 8px !important;
+  background: #303030 !important;
+  color: #f5f5f5 !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+}
+
+.asistencia-modal-historial .asistencia-modal-acciones button:hover {
+  border-color: #f5c400 !important;
+  background: #3a3520 !important;
+  color: #f5c400 !important;
+}
+
+@media (max-width: 700px) {
+  .asistencia-modal-fondo {
+    padding: 12px !important;
+  }
+
+  .asistencia-modal-fondo .asistencia-modal-historial {
+    max-height: calc(100vh - 24px) !important;
+    padding: 19px !important;
+  }
+
+  .asistencia-modal-historial .asistencia-historial-titulo {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+  }
+
+  .asistencia-modal-historial .asistencia-modal-acciones button {
+    width: 100% !important;
+  }
+}

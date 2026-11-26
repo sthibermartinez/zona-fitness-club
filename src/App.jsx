@@ -15,6 +15,10 @@ import {
 
 import './App.css'
 import { supabase } from './supabase'
+import PanelInstructores, { PantallaAcceso } from './PanelInstructores'
+import AsistenciaAdmin from './AsistenciaAdmin'
+import GestionEmpleados from './GestionEmpleados'
+import { identificadorACorreo } from './identificadorAcceso'
 // CONFIGURACIÓN DE EMAILJS
 const EMAILJS_SERVICE_ID = 'service_hqfkepk'
 const EMAILJS_TEMPLATE_ID = 'template_6rqaj9g'
@@ -808,6 +812,8 @@ useEffect(() => {
     { nombre: 'Promociones', icono: Tag },
     { nombre: 'Pagos', icono: CreditCard },
     { nombre: 'Ventas diarias', icono: Wallet },
+    { nombre: 'Asistencia', icono: UserCheck },
+    { nombre: 'Instructores', icono: Users },
     { nombre: 'Mediciones', icono: Ruler },
     { nombre: 'Reportes', icono: BarChart3 }
   ]
@@ -3593,6 +3599,12 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
           </>
         )}
 
+        {seccion === 'Asistencia' && (
+          <AsistenciaAdmin SelectorFecha={SelectorFecha} SelectorOpcion={SelectorOpcion} />
+        )}
+
+        {seccion === 'Instructores' && <GestionEmpleados />}
+
         {seccion === 'Mediciones' && (
           <div className="content-card">
             <h2>Mediciones</h2>
@@ -3931,7 +3943,7 @@ useEffect(() => {
     setCargando(true)
 
     const { error } = await supabase.auth.signInWithPassword({
-      email: correo,
+      email: identificadorACorreo(correo),
       password: contrasena
     })
 
@@ -3955,12 +3967,13 @@ if (error) {
         <h1>Zona Fitness Club</h1>
         <p>Inicia sesión para continuar</p>
 
-        <label>Correo electrónico</label>
+        <label>Correo electrónico o teléfono</label>
         <input
-          type="email"
+          type="text"
           value={correo}
           onChange={(e) => setCorreo(e.target.value)}
-          placeholder="Tu correo electrónico"
+          placeholder="Tu correo o número de teléfono"
+          autoComplete="username"
           required
         />
 
@@ -3985,6 +3998,8 @@ if (error) {
 function App() {
   const [sesion, setSesion] = useState(null)
   const [verificando, setVerificando] = useState(true)
+  const [acceso, setAcceso] = useState(null)
+  const [intentoAcceso, setIntentoAcceso] = useState(0)
 
   useEffect(() => {
     let activo = true
@@ -4017,6 +4032,43 @@ function App() {
     }
   }, [])
 
+  // Consulta el rol de la cuenta (administrador o empleado) en la tabla perfiles
+  const idUsuario = sesion?.user?.id
+
+  useEffect(() => {
+    if (!idUsuario) {
+      setAcceso(null)
+      return
+    }
+
+    let activo = true
+    setAcceso(null)
+
+    async function cargarPerfil() {
+      const { data, error } = await supabase
+        .from('perfiles')
+        .select('id, nombre_completo, rol, activo')
+        .eq('id', idUsuario)
+        .maybeSingle()
+
+      if (!activo) return
+
+      if (error) {
+        console.error('Error verificando el perfil:', error)
+        setAcceso({ idUsuario, estado: 'error', perfil: null })
+        return
+      }
+
+      setAcceso({ idUsuario, estado: 'listo', perfil: data || null })
+    }
+
+    cargarPerfil()
+
+    return () => {
+      activo = false
+    }
+  }, [idUsuario, intentoAcceso])
+
   if (verificando) {
     return (
       <div className="auth-loading">
@@ -4025,9 +4077,51 @@ function App() {
     )
   }
 
-  return sesion
-    ? <Aplicacion user={sesion.user} />
-    : <PantallaLogin />
+  if (!sesion) return <PantallaLogin />
+
+  if (!acceso || acceso.idUsuario !== sesion.user.id) {
+    return (
+      <div className="auth-loading">
+        Verificando acceso...
+      </div>
+    )
+  }
+
+  if (acceso.estado === 'error') {
+    return (
+      <PantallaAcceso
+        titulo="No se pudo verificar tu acceso"
+        mensaje="Revisa tu conexión a internet e inténtalo de nuevo."
+        onReintentar={() => setIntentoAcceso(numero => numero + 1)}
+      />
+    )
+  }
+
+  const perfil = acceso.perfil
+
+  if (!perfil || !perfil.activo) {
+    return (
+      <PantallaAcceso
+        titulo="Cuenta sin acceso"
+        mensaje="Tu cuenta no tiene acceso al sistema. Comunícate con el administrador."
+      />
+    )
+  }
+
+  if (perfil.rol === 'admin') {
+    return <Aplicacion user={sesion.user} />
+  }
+
+  if (perfil.rol === 'empleado') {
+    return <PanelInstructores user={sesion.user} perfil={perfil} />
+  }
+
+  return (
+    <PantallaAcceso
+      titulo="Cuenta sin acceso"
+      mensaje="Tu cuenta no tiene un rol válido. Comunícate con el administrador."
+    />
+  )
 }
 
 export default App

@@ -1,0 +1,524 @@
+/* Panel de instructores. Todas las clases empiezan con "pi-" para no chocar con App.css.
+   Los colores son variables: el tema claro es el predeterminado y .pi-oscuro
+   aplica la paleta oscura (la misma del panel administrativo). */
+.pi-pantalla {
+  --pi-fondo: #f4f4f4;
+  --pi-tarjeta: #ffffff;
+  --pi-interior: #f4f4f4;
+  --pi-borde: #e0e0e0;
+  --pi-texto: #111111;
+  --pi-suave: #666666;
+  --pi-amarillo: #f5c400;
+  --pi-sobre-amarillo: #11110b;
+  --pi-campo-borde: #c8c8c8;
+  --pi-sec-fondo: #ececec;
+  --pi-sec-borde: #cfcfcf;
+  --pi-sec-texto: #111111;
+  --pi-icono-fondo: #fdf3c6;
+  --pi-icono: #8a6d00;
+  --pi-pendiente-fondo: #e4e4e4;
+  --pi-pendiente-texto: #333333;
+  --pi-cerrado-fondo: #d6d6d6;
+  --pi-cerrado-texto: #444444;
+  --pi-alerta-fondo: #fdecec;
+  --pi-alerta-borde: #e0a0a0;
+  --pi-alerta-texto: #8a1f1f;
+  --pi-error: #b42323;
+  --pi-velo: rgba(0, 0, 0, 0.55);
+
+  min-height: 100vh;
+  background: var(--pi-fondo);
+  color: var(--pi-texto);
+  font-family: 'Montserrat', Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+.pi-pantalla.pi-oscuro {
+  --pi-fondo: #151515;
+  --pi-tarjeta: #222222;
+  --pi-interior: #151515;
+  --pi-borde: #383838;
+  --pi-texto: #ffffff;
+  --pi-suave: #aaaaaa;
+  --pi-campo-borde: #555555;
+  --pi-sec-fondo: #333333;
+  --pi-sec-borde: #555555;
+  --pi-sec-texto: #ffffff;
+  --pi-icono-fondo: #403719;
+  --pi-icono: #f5c400;
+  --pi-pendiente-fondo: #333333;
+  --pi-pendiente-texto: #ffffff;
+  --pi-cerrado-fondo: #444444;
+  --pi-cerrado-texto: #d0d0d0;
+  --pi-alerta-fondo: #3a1616;
+  --pi-alerta-borde: #b33a3a;
+  --pi-alerta-texto: #ffd6d6;
+  --pi-error: #ffb4b4;
+  --pi-velo: rgba(0, 0, 0, 0.75);
+}
+
+.pi-centrado {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Barra superior: siempre oscura, como el menú del administrador */
+.pi-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 32px;
+  background: #090909;
+  border-bottom: 1px solid #383838;
+}
+
+.pi-marca {
+  margin: 0;
+  color: var(--pi-texto);
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: 0.3px;
+}
+
+.pi-encabezado .pi-marca {
+  color: #ffffff;
+}
+
+.pi-lema {
+  display: block;
+  margin-top: 4px;
+  color: #aaaaa4;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.pi-usuario {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pi-usuario-nombre {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* Botón de tema (mismo aspecto que el del administrador) */
+.pi-tema {
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #292929;
+  color: #f5c400;
+  border: 1px solid #444444;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.pi-avatar {
+  width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--pi-amarillo);
+  color: var(--pi-sobre-amarillo);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.pi-contenido {
+  flex: 1;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  box-sizing: border-box;
+}
+
+.pi-pagina-titulo h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.pi-pagina-titulo p {
+  margin: 6px 0 24px;
+  color: var(--pi-suave);
+  font-size: 16px;
+}
+
+/* Tarjetas */
+.pi-tarjeta {
+  background: var(--pi-tarjeta);
+  border: 1px solid var(--pi-borde);
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.pi-tarjeta-acceso {
+  width: 100%;
+  max-width: 460px;
+  text-align: center;
+}
+
+.pi-etiqueta {
+  margin: 0 0 8px;
+  color: var(--pi-suave);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.pi-titulo {
+  margin: 0 0 10px;
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.pi-texto {
+  margin: 8px 0;
+  color: var(--pi-suave);
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.pi-error {
+  margin: 8px 0;
+  color: var(--pi-error);
+  font-size: 17px;
+}
+
+.pi-estado {
+  display: inline-block;
+  margin: 14px 0 6px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.pi-estado-pendiente {
+  background: var(--pi-pendiente-fondo);
+  color: var(--pi-pendiente-texto);
+}
+
+.pi-estado-abierto {
+  background: var(--pi-amarillo);
+  color: var(--pi-sobre-amarillo);
+}
+
+.pi-estado-cerrado {
+  background: var(--pi-cerrado-fondo);
+  color: var(--pi-cerrado-texto);
+}
+
+/* Botones */
+.pi-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.pi-boton {
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pi-boton-primario {
+  background: var(--pi-amarillo);
+  color: var(--pi-sobre-amarillo);
+}
+
+.pi-boton-secundario {
+  background: var(--pi-sec-fondo);
+  color: var(--pi-sec-texto);
+  border-color: var(--pi-sec-borde);
+}
+
+/* "Cerrar sesión" vive en la barra oscura: conserva siempre su aspecto oscuro */
+.pi-encabezado .pi-boton-secundario {
+  background: #333333;
+  color: #ffffff;
+  border-color: #555555;
+}
+
+.pi-boton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pi-boton-grande {
+  width: 100%;
+  min-height: 72px;
+  margin-top: 20px;
+  font-size: 20px;
+}
+
+/* Datos del turno */
+.pi-datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.pi-dato {
+  flex: 1 1 170px;
+  background: var(--pi-interior);
+  border: 1px solid var(--pi-borde);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.pi-dato-etiqueta {
+  margin: 0 0 4px;
+  color: var(--pi-suave);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.pi-dato-valor {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+/* Ventana de confirmación */
+.pi-modal-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--pi-velo);
+}
+
+.pi-modal {
+  width: 100%;
+  max-width: 480px;
+  padding: 28px;
+  text-align: center;
+  background: var(--pi-tarjeta);
+  border: 1px solid var(--pi-borde);
+  border-radius: 16px;
+}
+
+.pi-modal .pi-acciones .pi-boton {
+  flex: 1 1 180px;
+  min-height: 60px;
+}
+
+/* Búsqueda y registro de asistencia */
+.pi-seccion {
+  margin-top: 20px;
+}
+
+.pi-buscador {
+  width: 100%;
+  min-height: 64px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  background: var(--pi-interior);
+  color: var(--pi-texto);
+  border: 1px solid var(--pi-campo-borde);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 19px;
+}
+
+.pi-buscador:focus {
+  outline: none;
+  border-color: var(--pi-amarillo);
+}
+
+.pi-lista {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pi-cliente {
+  width: 100%;
+  min-height: 76px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  background: var(--pi-interior);
+  color: var(--pi-texto);
+  border: 1px solid var(--pi-borde);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.pi-cliente:active,
+.pi-cliente:hover {
+  border-color: var(--pi-amarillo);
+}
+
+.pi-cliente-icono {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--pi-icono-fondo);
+  color: var(--pi-icono);
+}
+
+.pi-cliente-datos {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pi-cliente-datos small {
+  color: var(--pi-suave);
+  font-size: 15px;
+}
+
+.pi-insignia {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.pi-insignia-vigente {
+  background: var(--pi-amarillo);
+  color: var(--pi-sobre-amarillo);
+}
+
+.pi-insignia-vencida {
+  background: #7a1f1f;
+  color: #ffffff;
+}
+
+.pi-insignia-inactivo {
+  background: var(--pi-cerrado-fondo);
+  color: var(--pi-cerrado-texto);
+}
+
+.pi-verificacion {
+  margin-top: 18px;
+}
+
+.pi-titulo-cliente {
+  font-size: 28px;
+  margin: 4px 0 0;
+}
+
+.pi-alerta {
+  margin: 18px 0 0;
+  padding: 16px 18px;
+  background: var(--pi-alerta-fondo);
+  border: 1px solid var(--pi-alerta-borde);
+  border-radius: 12px;
+  color: var(--pi-alerta-texto);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.pi-exito {
+  margin: 0 0 14px;
+  padding: 14px 18px;
+  background: var(--pi-amarillo);
+  color: var(--pi-sobre-amarillo);
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+@media (max-width: 700px) {
+  .pi-encabezado {
+    padding: 14px 16px;
+  }
+
+  .pi-usuario-nombre {
+    display: none;
+  }
+
+  .pi-contenido {
+    padding: 24px 16px;
+  }
+
+  .pi-titulo {
+    font-size: 28px;
+  }
+}
+/* Reloj en vivo */
+.pi-reloj {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: #292929;
+  border: 1px solid #444444;
+  min-width: 190px;
+}
+
+.pi-reloj-hora {
+  color: #f5c400;
+  font-size: 27px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+}
+
+.pi-reloj-fecha {
+  color: #cccccc;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+@media (max-width: 700px) {
+  .pi-encabezado {
+    flex-wrap: wrap;
+  }
+
+  .pi-reloj {
+    order: 3;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .pi-reloj-hora {
+    font-size: 25px;
+  }
+}
