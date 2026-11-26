@@ -466,3 +466,59 @@ transition: background .18s ease, border-color .18s ease, color .18s ease, trans
     width: 100% !important;
   }
 }
+
+/* =================================================================
+   CONSULTA DE CLIENTES Y ETIQUETA DE VISITAS
+   Usan colores translúcidos para verse bien en tema claro y oscuro.
+   ================================================================= */
+
+.asistencia-campo-consulta { margin-bottom: 14px; max-width: 320px; }
+
+.asistencia-consulta-aviso { margin: 12px 0 0; color: #8a8a8a; font-size: 12px; font-weight: 500; line-height: 1.5; }
+.asistencia-consulta-lista { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.asistencia-consulta-fila {
+  padding: 13px 15px;
+  border: 1px solid rgba(128, 128, 128, .3);
+  border-radius: 12px;
+  background: rgba(128, 128, 128, .07);
+}
+.asistencia-consulta-principal { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.asistencia-consulta-principal strong { color: inherit; font-size: 14px; font-weight: 800; }
+.asistencia-consulta-principal .asistencia-resultado { margin-left: auto; }
+.asistencia-consulta-telefono { display: block; margin-top: 4px; color: #8a8a8a; font-size: 11px; }
+.asistencia-consulta-detalle { margin: 8px 0 0; color: #8a8a8a; font-size: 12px; font-weight: 500; line-height: 1.55; }
+
+.asistencia-resultado {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+.asistencia-resultado-si { background: #f5c400; color: #111; }
+.asistencia-resultado-no { background: #fde2e2; color: #9b1c1c; }
+.asistencia-resultado-sin { background: #e4e4e4; color: #333; }
+.dark-mode .asistencia-resultado-sin { background: #383838; color: #d0d0d0; }
+
+.asistencia-insignia-visita {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f5c400;
+  color: #111;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  vertical-align: middle;
+}
+.asistencia-consulta-principal .asistencia-insignia-visita { margin-left: 0; }
+
+@media (max-width: 700px) {
+  .asistencia-campo-consulta { max-width: none; }
+  .asistencia-consulta-principal .asistencia-resultado { margin-left: 0; }
+}
