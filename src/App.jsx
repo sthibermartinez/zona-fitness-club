@@ -1975,7 +1975,7 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
           type="button"
           className="logout-confirm"
           onClick={async () => {
-            await supabase.auth.signOut()
+            await supabase.auth.signOut({ scope: 'local' })
           }}
         >
           Sí, cerrar sesión

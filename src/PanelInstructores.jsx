@@ -69,7 +69,7 @@ export function PantallaAcceso({ titulo, mensaje, onReintentar }) {
           <button
             type="button"
             className="pi-boton pi-boton-secundario"
-            onClick={() => supabase.auth.signOut()}
+            onClick={() => supabase.auth.signOut({ scope: 'local' })}
           >
             Cerrar sesión
           </button>
@@ -312,7 +312,7 @@ useEffect(() => {
           <button
             type="button"
             className="pi-boton pi-boton-secundario"
-            onClick={() => supabase.auth.signOut()}
+            onClick={() => supabase.auth.signOut({ scope: 'local' })}
           >
             Cerrar sesión
           </button>
