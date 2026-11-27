@@ -37,13 +37,15 @@ function formatearFechaCorta(fecha) {
 // Resultado de la verificación de la membresía de un cliente
 function obtenerEstadoCliente(cliente) {
   if (!cliente.activo) return 'inactivo'
+  if (!cliente.vencimiento) return 'pendiente'
   return cliente.vigente ? 'vigente' : 'vencida'
 }
 
 const ETIQUETAS_CLIENTE = {
   vigente: 'Vigente',
   vencida: 'Vencida',
-  inactivo: 'Inactivo'
+  inactivo: 'Inactivo',
+  pendiente: 'Sin vigencia actual'
 }
 
 const ETIQUETAS_ESTADO = {
@@ -546,7 +548,9 @@ useEffect(() => {
                   <p className="pi-alerta">
                     {estadoSeleccionado === 'inactivo'
                       ? 'El cliente está inactivo. No se puede registrar su asistencia.'
-                      : `La membresía venció el ${formatearFechaCorta(seleccionado.vencimiento)}. No se puede registrar su asistencia. Avisa a la administración.`}
+                      : estadoSeleccionado === 'pendiente'
+                        ? 'La membresía todavía no tiene vigencia. Consulta la fecha de inicio con administración.'
+                        : `La membresía venció el ${formatearFechaCorta(seleccionado.vencimiento)}. No se puede registrar su asistencia. Avisa a la administración.`}
                   </p>
                 )}
 

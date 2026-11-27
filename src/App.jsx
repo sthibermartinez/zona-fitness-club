@@ -1,3 +1,5 @@
+import { tipoPaqueteNavidad, precioNavidad, promocionDisponible, registrarPaquete } from './promocionNavidad'
+import Mediciones from './Mediciones'
 import CorteCaja from './CorteCaja'
 import { cargarReporteMensual, resumirAsistencia } from './datosReporteMensual'
 import { Fragment, useState, useEffect, useRef } from 'react'
@@ -129,6 +131,9 @@ function formatearNumeroRecibo(numero) {
 }
 
 function obtenerConceptoRecibo(registro) {
+  if (registro.tipo === tipoPaqueteNavidad) {
+    return `${registro.incluyeInscripcion ? 'Inscripción + ' : ''}Paquete navideño · 3 meses · 20 % de descuento`
+  }
   if (registro.incluyeInscripcion) {
     return `Inscripción + ${registro.tipo === 'Quincenal' ? 'Quincena' : 'Mensualidad'}`
   }
@@ -188,7 +193,7 @@ async function crearImagenRecibo(registro, nombreCliente) {
   const filas = [
     ['CLIENTE', nombreCliente],
     ['CONCEPTO', obtenerConceptoRecibo(registro)],
-    esInscripcion
+    esInscripcion && registro.tipo !== tipoPaqueteNavidad
       ? ['FECHA DE INSCRIPCIÓN', formatearFecha(registro.fechaInicio)]
       : ['FECHA DE PAGO', formatearFecha(registro.fechaPago || registro.fechaInicio)],
     ['VIGENCIA', `${formatearFecha(registro.fechaInicio)} al ${formatearFecha(registro.fechaFin)}`]
@@ -867,20 +872,20 @@ useEffect(() => {
 
 
   const promocionesDisponibles = promociones.filter(promo =>
-    (promo.aplicaA === formulario.tipo || promo.aplicaA === 'Ambas') &&
-    formulario.fechaInicio >= promo.fechaInicio &&
-    formulario.fechaInicio <= promo.fechaFin
+    (!clienteEditando || promo.aplicaA !== tipoPaqueteNavidad) &&
+    promocionDisponible(promo, formulario.tipo, formulario.fechaInicio)
   )
-
-  const promocionSeleccionada = promocionesDisponibles.find(
-    promo => promo.nombre === formulario.promocion
-  )
+  const promocionSeleccionada = promocionesDisponibles.find(promo => promo.nombre === formulario.promocion)
+  const altaNavidena = promocionSeleccionada?.aplicaA === tipoPaqueteNavidad
+  const editandoPaquete = clienteEditando && clientes.some(cliente => cliente.id === clienteEditando && cliente.tipo === tipoPaqueteNavidad)
 
   const precioFinal = promocionSeleccionada
-    ? promocionSeleccionada.precio
+    ? (altaNavidena ? precioNavidad : promocionSeleccionada.precio)
     : formulario.precio
 
-  const fechaVencimiento = calcularVencimiento(formulario.fechaInicio, formulario.tipo)
+  const paqueteAlta = altaNavidena && formulario.fechaInicio
+    ? registrarPaquete(null, promocionSeleccionada, formulario.fechaInicio) : null
+  const fechaVencimiento = paqueteAlta?.fechaFin ?? calcularVencimiento(formulario.fechaInicio, formulario.tipo)
 
   useEffect(() => {
     const registro = registrosVentas.find(item => item.fecha === fechaVenta)
@@ -993,7 +998,7 @@ useEffect(() => {
 
   const ingresosMesTotal = ingresosMes + ingresosVentasDiariasMes
 
-  const fechaInicioRenovacion = clienteRenovando
+  const inicioRenovacionNormal = clienteRenovando
     ? formularioRenovacion.modalidad === 'anticipado' &&
       clienteRenovando.vencimiento >= obtenerFecha()
       ? sumarDias(clienteRenovando.vencimiento, 1)
@@ -1001,22 +1006,20 @@ useEffect(() => {
     : obtenerFecha()
 
   const promocionesDisponiblesRenovacion = clienteRenovando
-    ? promociones.filter(promo =>
-        (promo.aplicaA === formularioRenovacion.tipo || promo.aplicaA === 'Ambas') &&
-        fechaInicioRenovacion >= promo.fechaInicio &&
-        fechaInicioRenovacion <= promo.fechaFin
-      )
+    ? promociones.filter(promo => promocionDisponible(promo, formularioRenovacion.tipo,
+      inicioRenovacionNormal))
     : []
-
-  const promocionRenovacion = promocionesDisponiblesRenovacion.find(
-    promo => promo.nombre === formularioRenovacion.promocion
-  )
+  const promocionRenovacion = promocionesDisponiblesRenovacion.find(promo => promo.nombre === formularioRenovacion.promocion)
+  const renovacionNavidena = promocionRenovacion?.aplicaA === tipoPaqueteNavidad
+  const paqueteRenovacion = renovacionNavidena
+    ? registrarPaquete(clienteRenovando, promocionRenovacion, formularioRenovacion.fechaPago || obtenerFecha()) : null
+  const fechaInicioRenovacion = paqueteRenovacion?.fechaInicio ?? inicioRenovacionNormal
 
   const precioRenovacion = promocionRenovacion
-    ? promocionRenovacion.precio
+    ? (renovacionNavidena ? precioNavidad : promocionRenovacion.precio)
     : formularioRenovacion.tipo === 'Mensual' ? '200' : '125'
 
-  const fechaFinRenovacion = calcularVencimiento(
+  const fechaFinRenovacion = paqueteRenovacion?.fechaFin ?? calcularVencimiento(
     fechaInicioRenovacion,
     formularioRenovacion.tipo
   )
@@ -1442,10 +1445,10 @@ const nombreMesReporte = mesGenerado
   function guardarCliente(evento) {
     evento.preventDefault()
 
-    if (
+    if (!editandoPaquete && (
       !formulario.fechaInicio ||
       formulario.fechaInicio.slice(0, 4) !== String(new Date().getFullYear())
-    ) {
+    )) {
       setAviso({
         tipo: 'fecha',
         titulo: 'Fecha no válida',
@@ -1462,6 +1465,18 @@ const nombreMesReporte = mesGenerado
 
     if (clienteExistente) {
       setAviso({ tipo: 'duplicado', cliente: clienteExistente })
+      return
+    }
+
+    if (editandoPaquete) {
+      setClientes(actuales => actuales.map(cliente => cliente.id === clienteEditando
+        ? { ...cliente, nombre: formulario.nombre.trim(), telefono: telefonoLimpio } : cliente))
+      cancelarEdicionCliente()
+      return
+    }
+
+    if (altaNavidena && formulario.fechaInicio > obtenerFecha()) {
+      setAviso({ tipo: 'fecha', titulo: 'Fecha de pago no válida', mensaje: 'Registra la fecha real en que se recibió el pago del paquete.' })
       return
     }
 
@@ -1518,7 +1533,8 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
       fechaPago: formulario.fechaInicio,
       fechaRegistro: obtenerFecha(),
       incluyeInscripcion: cobrarInscripcion,
-      modalidad: 'Inscripción inicial'
+      modalidad: 'Inscripción inicial',
+      ...paqueteAlta
     }
 
     const nuevoCliente = {
@@ -1529,6 +1545,7 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
       promocion: promocionSeleccionada?.nombre || '',
       telefono: telefonoLimpio,
       vencimiento: fechaVencimiento,
+      ...(paqueteAlta ? { fechaInicio: paqueteAlta.fechaInicio, tipo: paqueteAlta.tipo } : {}),
       activo: true,
       recordatoriosEnviados: [],
       historialMembresias: [registroInicial]
@@ -1559,9 +1576,10 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
     const vigente = cliente.vencimiento >= obtenerFecha()
     setClienteRenovando(cliente)
 
+    const tipoAnterior = obtenerUltimaMembresia(cliente)?.tipo || cliente.tipo
     setFormularioRenovacion({
       modalidad: vigente ? 'anticipado' : 'normal',
-      tipo: obtenerUltimaMembresia(cliente)?.tipo || cliente.tipo || 'Mensual',
+      tipo: tipoAnterior === 'Quincenal' ? 'Quincenal' : 'Mensual',
       metodoPago: 'Efectivo',
       promocion: '',
       fechaPago: obtenerFecha()
@@ -1590,7 +1608,18 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
 
     const vigente = clienteActual.vencimiento >= obtenerFecha()
 
-    if (!vigente && formularioRenovacion.modalidad === 'anticipado') {
+    if (renovacionNavidena && clienteActual.tipo === tipoPaqueteNavidad && vigente) {
+      setAviso({ tipo: 'fecha', titulo: 'Paquete ya registrado', mensaje: 'Esta persona ya tiene un paquete navideño vigente o programado.' })
+      return
+    }
+
+    if (!renovacionNavidena && clienteActual.tipo === tipoPaqueteNavidad &&
+        (obtenerFecha() < clienteActual.fechaInicio || (vigente && formularioRenovacion.modalidad !== 'anticipado'))) {
+      setAviso({ tipo: 'fecha', titulo: 'El paquete ya está pagado', mensaje: 'La siguiente renovación debe comenzar después de que termine el paquete navideño.' })
+      return
+    }
+
+    if (!renovacionNavidena && !vigente && formularioRenovacion.modalidad === 'anticipado') {
       setAviso({
         tipo: 'fecha',
         titulo: 'Modalidad no disponible',
@@ -1610,11 +1639,8 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
       return
     }
 
-    const fechaInicio = vigente && formularioRenovacion.modalidad === 'anticipado'
-      ? sumarDias(clienteActual.vencimiento, 1)
-      : fechaPagoSeleccionada
-
-    const fechaFin = calcularVencimiento(fechaInicio, formularioRenovacion.tipo)
+    const fechaInicio = fechaInicioRenovacion
+    const fechaFin = fechaFinRenovacion
 
     const nuevoRegistro = {
       id: Date.now(),
@@ -1629,7 +1655,8 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
       fechaRegistro: obtenerFecha(),
       modalidad: vigente && formularioRenovacion.modalidad === 'anticipado'
         ? 'Pago anticipado'
-        : 'Renovación normal'
+        : 'Renovación normal',
+      ...(paqueteRenovacion ? { ...paqueteRenovacion, modalidad: 'Paquete pagado' } : {})
     }
 
     setClientes(actuales =>
@@ -1639,7 +1666,8 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
         return {
           ...cliente,
           fechaInicio,
-          tipo: formularioRenovacion.tipo,
+          tipo: nuevoRegistro.tipo,
+          vigenciaAnteriorHasta: nuevoRegistro.vigenciaAnteriorHasta || null,
           precio: precioRenovacion,
           metodoPago: formularioRenovacion.metodoPago,
           promocion: promocionRenovacion?.nombre || '',
@@ -1679,7 +1707,7 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
       const imagen = await crearImagenRecibo(registro, cliente.nombre)
       const nombreArchivo = `Recibo-${formatearNumeroRecibo(registro.numeroRecibo)}.png`
 
-      const mensaje = `${obtenerSaludo()}, ${cliente.nombre}. Le compartimos su recibo de pago No. ${formatearNumeroRecibo(registro.numeroRecibo)} de Zona Fitness Club. ¡Gracias por su preferencia! 💪`
+      const mensaje = `${obtenerSaludo()}, ${cliente.nombre}. Le compartimos su recibo de pago No. ${formatearNumeroRecibo(registro.numeroRecibo)} de Zona Fitness Club.${registro.tipo === tipoPaqueteNavidad ? ` Paquete navideño pagado del ${formatearFecha(registro.fechaInicio)} al ${formatearFecha(registro.fechaFin)}.` : ''} ¡Gracias por su preferencia! 💪`
 
       // En celular: menú Compartir del teléfono con la imagen ya adjunta
       const archivoRecibo = new File([imagen], nombreArchivo, { type: 'image/png' })
@@ -1743,7 +1771,7 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
   function guardarPromocion(evento) {
     evento.preventDefault()
 
-    if (formularioPromo.fechaFin < formularioPromo.fechaInicio) {
+    if (formularioPromo.aplicaA !== tipoPaqueteNavidad && formularioPromo.fechaFin < formularioPromo.fechaInicio) {
       setAviso({
         tipo: 'fecha',
         titulo: 'Fechas incorrectas',
@@ -1769,7 +1797,9 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
     const datos = {
       ...formularioPromo,
       nombre: formularioPromo.nombre.trim(),
-      precio: String(Number(formularioPromo.precio))
+      precio: formularioPromo.aplicaA === tipoPaqueteNavidad ? precioNavidad : String(Number(formularioPromo.precio)),
+      ...(formularioPromo.aplicaA === tipoPaqueteNavidad
+        ? { fechaInicio: '', fechaFin: '', activa: formularioPromo.activa !== false } : {})
     }
 
     if (promocionEditando) {
@@ -1794,7 +1824,8 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
       precio: promo.precio,
       fechaInicio: promo.fechaInicio,
       fechaFin: promo.fechaFin,
-      aplicaA: promo.aplicaA
+      aplicaA: promo.aplicaA,
+      activa: promo.activa
     })
     setPromocionEditando(promo.id)
     setMostrarFormularioPromo(true)
@@ -1840,7 +1871,13 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
     setAviso(null)
   }
 
+  function cambiarDisponibilidadNavidad(id) {
+    setPromociones(actuales => actuales.map(promo => promo.id === id && promo.aplicaA === tipoPaqueteNavidad
+      ? { ...promo, activa: promo.activa === false } : promo))
+  }
+
   function estadoPromocion(promo) {
+    if (promo.aplicaA === tipoPaqueteNavidad) return promo.activa === false ? 'Desactivada' : 'Activa'
     const hoy = obtenerFecha()
     if (hoy < promo.fechaInicio) return 'Próximamente'
     if (hoy > promo.fechaFin) return 'Vencida'
@@ -1849,6 +1886,8 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
 
   function estadoMembresia(cliente) {
     if (cliente.activo === false) return 'Inactivo'
+    if (cliente.tipo === tipoPaqueteNavidad && cliente.fechaInicio > obtenerFecha() &&
+        (!cliente.vigenciaAnteriorHasta || cliente.vigenciaAnteriorHasta < obtenerFecha())) return 'Programada'
     if (cliente.vencimiento < obtenerFecha()) return 'Vencida'
     return 'Vigente'
   }
@@ -2228,8 +2267,9 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                       />
                     </label>
 
+                    {!editandoPaquete && <>
                     <label>
-                      Fecha de inscripción
+                      {altaNavidena ? 'Fecha de pago' : 'Fecha de inscripción'}
                       <SelectorFecha
                         value={formulario.fechaInicio}
                         onChange={fecha => setFormulario({ ...formulario, fechaInicio: fecha, promocion: '' })}
@@ -2259,6 +2299,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                       </label>
                     )}
 
+                    {paqueteAlta && <p>Vigencia del {formatearFecha(paqueteAlta.fechaInicio)} al {formatearFecha(paqueteAlta.fechaFin)}.</p>}
                     <label>
                       Precio de membresía
                       <input type="text" value={`Q${Number(precioFinal).toFixed(2)}`} readOnly />
@@ -2300,6 +2341,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                       Fecha de vencimiento
                       <input type="text" value={formatearFecha(fechaVencimiento)} readOnly />
                     </label>
+                    </>}
                   </div>
 
                   <div className="form-buttons">
@@ -2528,7 +2570,12 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                                 {estado}
                               </span>
                             </td>
-                            <td>{expandida && <span className="promo-expanded-indicator">Opciones</span>}</td>
+                            <td>{promo.aplicaA === tipoPaqueteNavidad ? (
+                                <button type="button" className="cancel-button" onClick={evento => {
+                                  evento.stopPropagation()
+                                  cambiarDisponibilidadNavidad(promo.id)
+                                }}>{promo.activa === false ? 'Activar' : 'Desactivar'}</button>
+                              ) : expandida && <span className="promo-expanded-indicator">Opciones</span>}</td>
                           </tr>
 
                           {expandida && (
@@ -2593,6 +2640,12 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                                                 {registro.metodoPago || 'Sin especificar'}
                                                 <br />
                                                 <small>{registro.modalidad || 'Membresía'}</small>
+                                                {registro.tipo === tipoPaqueteNavidad && registro.numeroRecibo && (
+                                                  <button type="button" className="cancel-button"
+                                                    onClick={() => { setErrorRecibo(''); setAviso({ tipo: 'renovacionExitosa', cliente, registro, esConsultaRecibo: true }) }}>
+                                                    Ver recibo
+                                                  </button>
+                                                )}
                                               </td>
                                               <td><strong>Q{Number(registro.precio || 0).toFixed(2)}</strong></td>
                                             </tr>
@@ -2670,10 +2723,12 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                         step="0.01"
                         placeholder="Ej. 175"
                         value={formularioPromo.precio}
+                        readOnly={formularioPromo.aplicaA === tipoPaqueteNavidad}
                         onChange={e => setFormularioPromo({ ...formularioPromo, precio: e.target.value })}
                         required
                       />
                     </label>
+                    {formularioPromo.aplicaA !== tipoPaqueteNavidad && <>
                     <label>
                       Fecha de inicio
                       <SelectorFecha
@@ -2688,16 +2743,22 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                         onChange={fecha => setFormularioPromo({ ...formularioPromo, fechaFin: fecha })}
                       />
                     </label>
+                    </>}
                     <label>
                       Aplicar a membresía
                       <SelectorOpcion
                         value={formularioPromo.aplicaA}
-                        options={['Mensual', 'Quincenal', 'Ambas']}
-                        onChange={aplicaA => setFormularioPromo({ ...formularioPromo, aplicaA })}
+                        options={['Mensual', 'Quincenal', 'Ambas', tipoPaqueteNavidad]}
+                        onChange={aplicaA => setFormularioPromo(actual => aplicaA === tipoPaqueteNavidad
+                          ? { ...actual, aplicaA, nombre: actual.nombre || 'Promoción navideña', precio: precioNavidad }
+                          : { ...actual, aplicaA, precio: actual.aplicaA === tipoPaqueteNavidad ? '' : actual.precio })}
                       />
                     </label>
                   </div>
 
+                  {formularioPromo.aplicaA === tipoPaqueteNavidad && (
+                    <p>Q480 por tres meses. La oferta se controla desde la lista de promociones.</p>
+                  )}
                   <div className="form-buttons">
                     <button type="button" className="cancel-button" onClick={cancelarFormularioPromo}>Cancelar</button>
                     <button type="submit" className="primary-button">
@@ -2749,9 +2810,11 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                               <td>Q{Number(promo.precio).toFixed(2)}</td>
                               <td>{promo.aplicaA}</td>
                               <td>
-                                {formatearFecha(promo.fechaInicio)}
-                                <span className="promo-date-separator"> al </span>
-                                {formatearFecha(promo.fechaFin)}
+                                {promo.aplicaA === tipoPaqueteNavidad ? 'Control manual' : <>
+                                  {formatearFecha(promo.fechaInicio)}
+                                  <span className="promo-date-separator"> al </span>
+                                  {formatearFecha(promo.fechaFin)}
+                                </>}
                               </td>
                               <td>
                                 <span className={
@@ -2760,7 +2823,12 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                                     : estado === 'Vencida' ? 'status-expired' : 'status-upcoming'
                                 }>{estado}</span>
                               </td>
-                              <td>{expandida && <span className="promo-expanded-indicator">Opciones</span>}</td>
+                              <td>{promo.aplicaA === tipoPaqueteNavidad ? (
+                                <button type="button" className="cancel-button" onClick={evento => {
+                                  evento.stopPropagation()
+                                  cambiarDisponibilidadNavidad(promo.id)
+                                }}>{promo.activa === false ? 'Activar' : 'Desactivar'}</button>
+                              ) : expandida && <span className="promo-expanded-indicator">Opciones</span>}</td>
                             </tr>
 
                             {expandida && (
@@ -3686,12 +3754,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
 
         {seccion === 'Instructores' && <GestionEmpleados />}
 
-        {seccion === 'Mediciones' && (
-          <div className="content-card">
-            <h2>Mediciones</h2>
-            <p>Esta sección estará disponible próximamente.</p>
-          </div>
-        )}
+        {seccion === 'Mediciones' && <Mediciones clientes={clientes} SelectorOpcion={SelectorOpcion} SelectorFecha={SelectorFecha} />}
       </main>
 
       {/* MODAL DE RENOVACIÓN */}
@@ -3885,9 +3948,9 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
 
             {aviso.tipo === 'renovacionExitosa' && (
               <>
-                <h2 id="modal-title">{aviso.esNuevoCliente ? 'Cliente registrado' : 'Renovación registrada'}</h2>
+                <h2 id="modal-title">{aviso.esConsultaRecibo ? 'Recibo del paquete navideño' : aviso.esNuevoCliente ? 'Cliente registrado' : 'Renovación registrada'}</h2>
                 <p className="modal-description">
-                  {aviso.esNuevoCliente
+                  {aviso.esConsultaRecibo ? obtenerConceptoRecibo(aviso.registro) : aviso.esNuevoCliente
                     ? `${aviso.cliente.nombre} se registró correctamente.`
                     : `La renovación de ${aviso.cliente.nombre} se registró correctamente.`}
                 </p>
