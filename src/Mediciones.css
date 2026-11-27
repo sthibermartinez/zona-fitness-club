@@ -1,0 +1,28 @@
+.mediciones-formulario {
+  display: grid;
+  gap: 1.6rem;
+}
+.mediciones-bloque {
+  display: grid;
+  gap: .8rem;
+}
+.mediciones-bloque + .mediciones-bloque {
+  padding-top: 1.35rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+.mediciones-bloque h3, .mediciones-bloque p { margin: 0; }
+.mediciones-formulario .form-grid, .mediciones-resultados { gap: 1rem 1.4rem; }
+.mediciones-selector { display: grid; gap: .55rem; align-content: start; font-size: .85rem; font-weight: 600; }
+.mediciones-casilla { display: flex; align-items: center; gap: .55rem; font-size: .85rem; }
+.mediciones-casilla input { accent-color: #f5c400; }
+
+.mediciones-guia {
+  padding: .85rem 1rem;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: .65rem;
+}
+.mediciones-guia summary { cursor: pointer; font-weight: 700; }
+.mediciones-guia p { margin-top: .75rem; }
+.mediciones-guia dl { display: grid; gap: .65rem; margin-block: .75rem; }
+.mediciones-guia dt { font-weight: 700; }
+.mediciones-guia dd { margin: .2rem 0 0; }
