@@ -4,6 +4,16 @@ import { supabase } from './supabase'
 import './CajaTurno.css'
 
 const zona = 'America/Guatemala'
+const avisoDeVenta = 'zona-fitness:venta-registrada'
+
+function avisarVentaRegistrada() {
+  // Las otras pestañas solo reciben una señal. Consultan la venta con sus propios permisos.
+  try {
+    localStorage.setItem(avisoDeVenta, crypto.randomUUID())
+  } catch {
+    // Si el navegador bloquea el almacenamiento, queda la actualización periódica.
+  }
+}
 const fechaCaja = () => new Intl.DateTimeFormat('en-CA', {
   timeZone: zona, year: 'numeric', month: '2-digit', day: '2-digit'
 }).format(new Date())
@@ -120,7 +130,9 @@ function HistorialCaja({ revision, soloUltima, turnoFiltro, turnos }) {
   const [fecha, setFecha] = useState(fechaCaja)
   useEffect(() => {
     let vigente = true
+    let consultaActual = 0
     async function leer() {
+      const numeroConsulta = ++consultaActual
       const hoy = fechaCaja()
       const inicio = new Date(`${hoy}T00:00:00-06:00`)
       const fin = new Date(inicio.getTime() + 86400000)
@@ -134,7 +146,7 @@ function HistorialCaja({ revision, soloUltima, turnoFiltro, turnos }) {
         consulta = soloUltima ? consulta.limit(1) : consulta
           .gte('cobrada_en', inicio.toISOString()).lt('cobrada_en', fin.toISOString()).range(offset, offset + 199)
         const { data, error } = await consulta
-        if (!vigente) return
+        if (!vigente || numeroConsulta !== consultaActual) return
         if (error) { setError('No se pudieron consultar las ventas.'); return }
         registros.push(...data)
         if (soloUltima || data.length < 200) break
@@ -145,7 +157,17 @@ function HistorialCaja({ revision, soloUltima, turnoFiltro, turnos }) {
     }
     leer()
     const timer = setInterval(leer, 30000)
-    return () => { vigente = false; clearInterval(timer) }
+    function recibirAviso(evento) {
+      if (!soloUltima && evento.key === avisoDeVenta && evento.newValue) leer()
+    }
+    window.addEventListener('storage', recibirAviso)
+    window.addEventListener('focus', leer)
+    return () => {
+      vigente = false
+      clearInterval(timer)
+      window.removeEventListener('storage', recibirAviso)
+      window.removeEventListener('focus', leer)
+    }
   }, [revision, soloUltima])
 
   const visibles = turnoFiltro ? ventas.filter(venta => String(venta.turno_id) === turnoFiltro) : ventas
@@ -282,6 +304,7 @@ export default function CajaTurno({ operador, turnoId, solicitud, alCobrar, admi
       setPersonalizado({ nombre: '', precio: '' })
       setMensaje(`Cobro guardado · ${dinero(data.total)}`)
       setRevision(valor => valor + 1)
+      avisarVentaRegistrada()
       alCobrar?.()
     } catch {
       setError('Se perdió la conexión. Usa Reintentar cobro para conservar la misma referencia.')
