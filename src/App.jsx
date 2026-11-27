@@ -1,3 +1,5 @@
+import CorteCaja from './CorteCaja'
+import { cargarReporteMensual, resumirAsistencia } from './datosReporteMensual'
 import { Fragment, useState, useEffect, useRef } from 'react'
 import {
   LayoutDashboard, Users, CalendarCheck, CreditCard, Ruler,
@@ -5,7 +7,7 @@ import {
   ChevronRight, ChevronDown, Check, Trash2, X,
   AlertTriangle, Tag, Pencil, RefreshCw, UserX,
   UserCheck, History, MessageCircle, Bell, Settings,
-  Clock, Wallet, Menu, Droplet, Package, Save
+  Clock, Wallet, Menu, Droplet, Package
 } from 'lucide-react'
 import {
   // Conserva todos tus iconos actuales
@@ -18,6 +20,7 @@ import { supabase } from './supabase'
 import PanelInstructores, { PantallaAcceso } from './PanelInstructores'
 import AsistenciaAdmin from './AsistenciaAdmin'
 import GestionEmpleados from './GestionEmpleados'
+import CajaTurno from './CajaTurno'
 import { identificadorACorreo } from './identificadorAcceso'
 // CONFIGURACIÓN DE EMAILJS
 const EMAILJS_SERVICE_ID = 'service_hqfkepk'
@@ -574,6 +577,31 @@ function SelectorFecha({ value, onChange, fechaMaxima }) {
   )
 }
 
+const menuPrincipal = [
+    { nombre: 'Inicio', icono: LayoutDashboard },
+    { nombre: 'Clientes', icono: Users },
+    { nombre: 'Membresías', icono: CalendarCheck },
+    { nombre: 'Promociones', icono: Tag },
+    { nombre: 'Pagos', icono: CreditCard },
+    { nombre: 'Ventas diarias', icono: Wallet },
+    { nombre: 'Corte de caja', icono: Wallet },
+    { nombre: 'Asistencia', icono: UserCheck },
+    { nombre: 'Instructores', icono: Users },
+    { nombre: 'Mediciones', icono: Ruler },
+    { nombre: 'Reportes', icono: BarChart3 }
+  ]
+
+function leerUsosMenu(clave) {
+  try {
+    const datos = JSON.parse(localStorage.getItem(clave))
+    return Object.fromEntries(menuPrincipal.slice(1).map(({ nombre }) => [
+      nombre, Number.isSafeInteger(datos?.[nombre]) && datos[nombre] > 0 ? datos[nombre] : 0
+    ]))
+  } catch {
+    return {}
+  }
+}
+
 function Aplicacion({ user }) {
   const [datosCargados, setDatosCargados] = useState(false)
   const [errorDatos, setErrorDatos] = useState('')
@@ -613,6 +641,37 @@ useEffect(() => {
     modoOscuro ? 'oscuro' : 'claro'
   )
 }, [modoOscuro])
+  const [puedeUsarCorte, setPuedeUsarCorte] = useState(false)
+  useEffect(() => {
+    let vigente = true
+    supabase.rpc('puede_usar_corte').then(({ data }) => {
+      if (vigente) setPuedeUsarCorte(data === true)
+    })
+    return () => { vigente = false }
+  }, [user.id])
+
+  const claveMenu = `zona-fitness-menu-${user.id}`
+  const [menu] = useState(() => {
+    const usos = leerUsosMenu(claveMenu)
+    return [menuPrincipal[0], ...menuPrincipal.slice(1).sort((a, b) =>
+      (usos[b.nombre] || 0) - (usos[a.nombre] || 0)
+    )]
+  })
+
+  function abrirSeccion(nombre) {
+    if (nombre !== 'Inicio' && nombre !== seccion) {
+      try {
+        const usos = leerUsosMenu(claveMenu)
+        usos[nombre] = (usos[nombre] || 0) + 1
+        localStorage.setItem(claveMenu, JSON.stringify(usos))
+      } catch {
+        // La navegación sigue disponible si el navegador bloquea el almacenamiento.
+      }
+    }
+    setSeccion(nombre)
+    setMenuMovilAbierto(false)
+  }
+
  const [seccion, setSeccion] = useState('Inicio')
  const [menuMovilAbierto, setMenuMovilAbierto] = useState(false)
   const [clientes, setClientes] = useState([])
@@ -805,18 +864,7 @@ useEffect(() => {
     fechaPago: obtenerFecha()
   })
 
-  const menu = [
-    { nombre: 'Inicio', icono: LayoutDashboard },
-    { nombre: 'Clientes', icono: Users },
-    { nombre: 'Membresías', icono: CalendarCheck },
-    { nombre: 'Promociones', icono: Tag },
-    { nombre: 'Pagos', icono: CreditCard },
-    { nombre: 'Ventas diarias', icono: Wallet },
-    { nombre: 'Asistencia', icono: UserCheck },
-    { nombre: 'Instructores', icono: Users },
-    { nombre: 'Mediciones', icono: Ruler },
-    { nombre: 'Reportes', icono: BarChart3 }
-  ]
+
 
   const promocionesDisponibles = promociones.filter(promo =>
     (promo.aplicaA === formulario.tipo || promo.aplicaA === 'Ambas') &&
@@ -866,21 +914,6 @@ useEffect(() => {
       const precio = Number(registro.precios?.[clave] ?? producto.precio ?? 0)
       return suma + (Number.isFinite(cantidad) ? cantidad : 0) * (Number.isFinite(precio) ? precio : 0)
     }, 0)
-  }
-
-  function guardarVentasDia() {
-    const nuevoRegistro = {
-      fecha: fechaVenta,
-      visitas: Math.max(0, Number(formularioVentas.visitas || 0)),
-      agua: Math.max(0, Number(formularioVentas.agua || 0)),
-      proteina: Math.max(0, Number(formularioVentas.proteina || 0)),
-      creatina: Math.max(0, Number(formularioVentas.creatina || 0)),
-      productos: Object.fromEntries(Object.entries(formularioVentas.productos || {}).map(([id, cantidad]) => [id, Math.max(0, Number(cantidad || 0))])),
-      precios: Object.fromEntries(productosVenta.map(producto => [producto.tipo === 'base' ? producto.clave : producto.id, Number(producto.precio || 0)])),
-      nombres: Object.fromEntries(productosVenta.map(producto => [producto.tipo === 'base' ? producto.clave : producto.id, producto.nombre]))
-    }
-    setRegistrosVentas(actuales => [...actuales.filter(item => item.fecha !== fechaVenta), nuevoRegistro].sort((a, b) => a.fecha.localeCompare(b.fecha)))
-    setAvisoVentas('Registro del día actualizado. Se guardará automáticamente.')
   }
 
   function agregarProductoVenta(evento) {
@@ -1037,20 +1070,50 @@ const pagosMesAnterior = fechaMesAnterior
     )
   : []
 
-const registrosVentasDelMes = mesGenerado
-  ? registrosVentas.filter(registro => (registro.fecha || '').slice(0, 7) === mesGenerado)
-  : []
+const [resumenCaja, setResumenCaja] = useState(null)
+const [revisionResumen, setRevisionResumen] = useState(0)
 
-const registrosVentasMesAnterior = fechaMesAnterior
-  ? registrosVentas.filter(registro => (registro.fecha || '').slice(0, 7) === fechaMesAnterior)
-  : []
+useEffect(() => {
+  if (!mesGenerado) return
+  let vigente = true
+  cargarReporteMensual(mesGenerado, fechaMesAnterior)
+    .then(datos => { if (vigente) setResumenCaja({ mes: mesGenerado, revision: revisionResumen, ...datos }) })
+    .catch(() => { if (vigente) setResumenCaja({ mes: mesGenerado, revision: revisionResumen, error: true }) })
+  return () => { vigente = false }
+}, [mesGenerado, fechaMesAnterior, revisionResumen])
+
+const resultadoCaja = resumenCaja?.mes === mesGenerado && resumenCaja.revision === revisionResumen ? resumenCaja : null
+const ventasCaja = resultadoCaja?.ventas || []
+const cajaDelMes = ventasCaja.filter(venta => venta.fecha.startsWith(mesGenerado))
+const diasConCaja = new Set(ventasCaja.map(venta => venta.fecha))
+// Las hojas antiguas y los cobros de caja pueden contener la misma venta.
+const ingresosCaja = [
+  ...ventasCaja.map(venta => ({ fecha: venta.fecha, total: Number(venta.total) })),
+  ...registrosVentas.filter(registro => !diasConCaja.has(registro.fecha))
+    .map(registro => ({ fecha: registro.fecha, total: calcularIngresosRegistroVenta(registro) }))
+]
+const registrosVentasDelMes = ingresosCaja.filter(registro => registro.fecha?.startsWith(mesGenerado))
+const registrosVentasMesAnterior = ingresosCaja.filter(registro => registro.fecha?.startsWith(fechaMesAnterior))
+const asistenciaMes = resultadoCaja?.asistencias || []
+const asistenciaResumen = resumirAsistencia(asistenciaMes)
+const diasAsistenciaMaxima = asistenciaResumen.dias.filter(([, cantidad]) => cantidad === asistenciaResumen.dias[0]?.[1])
+const turnosAsistenciaMaxima = asistenciaResumen.turnos.filter(([, cantidad]) => cantidad === asistenciaResumen.turnos[0]?.[1])
+const ventasPorConcepto = new Map()
+for (const venta of cajaDelMes) {
+  for (const linea of venta.ventas_detalle || []) {
+    const concepto = ventasPorConcepto.get(linea.nombre) || { cantidad: 0, total: 0 }
+    concepto.cantidad += Number(linea.cantidad)
+    concepto.total += Math.round(Number(linea.subtotal) * 100)
+    ventasPorConcepto.set(linea.nombre, concepto)
+  }
+}
 
 const ingresosMembresiasReporte = pagosDelMes.reduce(
   (total, pago) => total + Number(pago.precio || 0), 0
 )
 
 const ingresosVentasReporte = registrosVentasDelMes.reduce(
-  (total, registro) => total + calcularIngresosRegistroVenta(registro), 0
+  (total, registro) => total + registro.total, 0
 )
 
 const ingresosReporte = ingresosMembresiasReporte + ingresosVentasReporte
@@ -1060,7 +1123,7 @@ const ingresosMembresiasMesAnterior = pagosMesAnterior.reduce(
 )
 
 const ingresosVentasMesAnterior = registrosVentasMesAnterior.reduce(
-  (total, registro) => total + calcularIngresosRegistroVenta(registro), 0
+  (total, registro) => total + registro.total, 0
 )
 
 const ingresosMesAnterior = ingresosMembresiasMesAnterior + ingresosVentasMesAnterior
@@ -1078,14 +1141,6 @@ const nuevasInscripciones = pagosDelMes.filter(
 const renovacionesReporte = pagosDelMes.filter(
   pago => pago.modalidad !== 'Inscripción inicial'
 ).length
-
-const pagosEfectivo = pagosDelMes.filter(
-  pago => pago.metodoPago === 'Efectivo'
-)
-
-const pagosTransferencia = pagosDelMes.filter(
-  pago => pago.metodoPago === 'Transferencia'
-)
 
 const diasDelMes = mesGenerado
   ? new Date(
@@ -1109,14 +1164,14 @@ const ventasDiarias = Array.from({ length: diasDelMes }, (_, indice) => {
 
   const ingresosVentasDiaReporte = registrosVentasDelMes
     .filter(registro => registro.fecha === fecha)
-    .reduce((total, registro) => total + calcularIngresosRegistroVenta(registro), 0)
+    .reduce((total, registro) => total + registro.total, 0)
 
   return {
     dia: indice + 1,
     ingresosMembresias: ingresosMembresiasDia,
     ingresosVentas: ingresosVentasDiaReporte,
     ingresos: ingresosMembresiasDia + ingresosVentasDiaReporte,
-    cantidad: pagosDia.length
+    cantidad: pagosDia.length + cajaDelMes.filter(venta => venta.fecha === fecha).length
   }
 })
 
@@ -1130,6 +1185,8 @@ const diaMayorIngreso = ventasDiarias.reduce(
   { dia: 0, ingresos: 0, cantidad: 0 }
 )
 
+const mayorVentaDiaria = Math.max(0, ...ventasDiarias.map(dia => dia.ingresosVentas))
+const diasMayorVenta = ventasDiarias.filter(dia => mayorVentaDiaria > 0 && dia.ingresosVentas === mayorVentaDiaria)
 const diaMasPagos = ventasDiarias.reduce(
   (mayor, dia) => dia.cantidad > mayor.cantidad ? dia : mayor,
   { dia: 0, ingresos: 0, cantidad: 0 }
@@ -1156,7 +1213,7 @@ const ventasSemanales = [1, 2, 3, 4, 5].map(semana => {
       const dia = Number((registro.fecha || '').slice(8, 10))
       return dia >= inicio && dia <= fin
     })
-    .reduce((total, registro) => total + calcularIngresosRegistroVenta(registro), 0)
+    .reduce((total, registro) => total + registro.total, 0)
 
   return {
     semana,
@@ -1174,31 +1231,15 @@ const maximoSemanal = Math.max(
   ...ventasSemanales.map(semana => semana.ingresos)
 )
 
-const metodosPagoReporte = [
-  {
-    nombre: 'Efectivo',
-    cantidad: pagosEfectivo.length,
-    ingresos: pagosEfectivo.reduce(
-      (total, pago) => total + Number(pago.precio || 0), 0
-    )
-  },
-  {
-    nombre: 'Transferencia',
-    cantidad: pagosTransferencia.length,
-    ingresos: pagosTransferencia.reduce(
-      (total, pago) => total + Number(pago.precio || 0), 0
-    )
-  },
-  {
-    nombre: 'Sin especificar',
-    cantidad: pagosDelMes.filter(
-      pago => !['Efectivo', 'Transferencia'].includes(pago.metodoPago)
-    ).length,
-    ingresos: pagosDelMes.filter(
-      pago => !['Efectivo', 'Transferencia'].includes(pago.metodoPago)
-    ).reduce((total, pago) => total + Number(pago.precio || 0), 0)
-  }
+const cobrosConMetodo = [
+  ...pagosDelMes.map(pago => ({ metodo: pago.metodoPago, total: Number(pago.precio || 0) })),
+  ...cajaDelMes.map(venta => ({ metodo: venta.metodo_pago, total: Number(venta.total) }))
 ]
+const metodosPagoReporte = [...new Set(cobrosConMetodo.map(cobro => cobro.metodo || 'Sin especificar'))]
+  .map(nombre => {
+    const cobros = cobrosConMetodo.filter(cobro => (cobro.metodo || 'Sin especificar') === nombre)
+    return { nombre, cantidad: cobros.length, ingresos: cobros.reduce((total, cobro) => total + cobro.total, 0) }
+  })
 
 const nombreMesReporte = mesGenerado
   ? new Date(
@@ -1221,23 +1262,52 @@ const nombreMesReporte = mesGenerado
     )
     .sort((a, b) => a.vencimiento.localeCompare(b.vencimiento))
 
-  function obtenerAvisoPendiente(cliente) {
-    const diasRestantes = diferenciaDias(obtenerFecha(), cliente.vencimiento)
+  const fechasGrupo = [
+    [-3, 'Hace tres días'], [-2, 'Antier'], [-1, 'Ayer'],
+    [0, 'Hoy'], [1, 'Mañana'], [2, 'Pasado mañana']
+  ].map(([dias, etiqueta]) => {
+    const fecha = sumarDias(obtenerFecha(), dias)
+    return { etiqueta, fecha, clientes: pagosPendientes.filter(cliente => cliente.vencimiento === fecha) }
+  }).filter(grupo => grupo.clientes.length > 0)
 
+  function compartirPendientes() {
+    const bloques = fechasGrupo.map(({ etiqueta, fecha, clientes }) =>
+      [`*${etiqueta} · ${formatearFecha(fecha)}*`, ...clientes.map(cliente =>
+        `• ${cliente.nombre.trim().replace(/\s+/g, ' ')}`
+      )].join('\n')
+    )
+    const mensaje = ['*Zona Fitness Club · Renovaciones pendientes*', ...bloques].join('\n\n')
+    window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer')
+  }
+
+  function obtenerRecordatorioEnviado(cliente) {
+    const dias = diferenciaDias(obtenerFecha(), cliente.vencimiento)
+    const clave = `${cliente.vencimiento}-${dias}`
+    return (cliente.recordatoriosEnviados || []).find(registro => registro.clave === clave)
+  }
+
+  function obtenerAvisoPendiente(cliente) {
+    if (cliente.activo === false || obtenerRecordatorioEnviado(cliente)) return null
+    const diasRestantes = diferenciaDias(obtenerFecha(), cliente.vencimiento)
     const configuracion = configuracionAvisos.find(
       aviso => aviso.diasAntes === diasRestantes && aviso.activo
     )
+    return configuracion ? { ...configuracion, clave: `${cliente.vencimiento}-${diasRestantes}` } : null
+  }
 
-    if (!configuracion) return null
-
-    const clave = `${cliente.vencimiento}-${configuracion.diasAntes}`
-
-    const yaEnviado = (cliente.recordatoriosEnviados || []).some(
-      registro => registro.clave === clave
+  function mostrarEstadoRecordatorio(cliente) {
+    const enviado = obtenerRecordatorioEnviado(cliente)
+    if (enviado) {
+      return <span className="reminder-status" role="status"><Check size={15} /> Aviso enviado</span>
+    }
+    if (!obtenerAvisoPendiente(cliente)) {
+      return <span className="reminder-status">Sin aviso programado para hoy</span>
+    }
+    return (
+      <button type="button" className="whatsapp-button" onClick={() => prepararWhatsApp(cliente)}>
+        <MessageCircle size={16} /> Enviar aviso
+      </button>
     )
-
-    if (yaEnviado) return null
-    return { ...configuracion, clave }
   }
 
   function prepararWhatsApp(cliente) {
@@ -1278,7 +1348,7 @@ const nombreMesReporte = mesGenerado
   }
 
   function confirmarRecordatorioEnviado() {
-    if (!aviso?.cliente) return
+    if (aviso?.tipo !== 'confirmarRecordatorio') return
 
     const clienteId = aviso.cliente.id
     const registro = {
@@ -1927,16 +1997,13 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
         <p className="menu-title">MENÚ PRINCIPAL</p>
 
         <nav>
-          {menu.map(item => {
+          {menu.filter(item => item.nombre !== 'Corte de caja' || puedeUsarCorte).map(item => {
             const Icono = item.icono
             return (
               <button
                 key={item.nombre}
                 className={seccion === item.nombre ? 'active' : ''}
-                onClick={() => {
-  setSeccion(item.nombre)
-  setMenuMovilAbierto(false)
-}}
+                onClick={() => abrirSeccion(item.nombre)}
               >
                 <Icono size={19} strokeWidth={2} />
                 <span>{item.nombre}</span>
@@ -2013,11 +2080,7 @@ onClick={cambiarTema}      title={modoOscuro ? 'Activar modo claro' : 'Activar m
                 <p className="empty">No hay clientes dentro del período de recordatorios.</p>
               ) : (
                 <div className="reminder-list">
-                  {clientesPorVencer.map(cliente => {
-                    const avisoPendiente = obtenerAvisoPendiente(cliente)
-                    const dias = diferenciaDias(obtenerFecha(), cliente.vencimiento)
-
-                    return (
+                  {clientesPorVencer.map(cliente => (
                       <div className="reminder-item" key={cliente.id}>
                         <div className="reminder-person">
                           <div className="reminder-avatar">
@@ -2035,28 +2098,10 @@ onClick={cambiarTema}      title={modoOscuro ? 'Activar modo claro' : 'Activar m
                         </div>
 
                         <div className="reminder-action">
-                          {avisoPendiente ? (
-                            <button
-                              type="button"
-                              className="whatsapp-button"
-                              onClick={() => prepararWhatsApp(cliente)}
-                            >
-                              <MessageCircle size={16} />
-                              Enviar aviso
-                            </button>
-                          ) : (
-                            <span className="reminder-status">
-                              {dias < 0
-                                ? 'Aviso no disponible o enviado'
-                                : dias === 0
-                                  ? 'Aviso no disponible o enviado'
-                                  : 'Sin aviso pendiente'}
-                            </span>
-                          )}
+                          {mostrarEstadoRecordatorio(cliente)}
                         </div>
                       </div>
-                    )
-                  })}
+                  ))}
                 </div>
               )}
             </div>
@@ -2851,6 +2896,10 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                   <h3><Clock size={17} /> Clientes pendientes de renovar</h3>
                   <p>Clientes vencidos o que vencen durante los próximos tres días.</p>
                 </div>
+                <button type="button" className="primary-button"
+                  disabled={fechasGrupo.length === 0} onClick={compartirPendientes}>
+                  <MessageCircle size={17} /> Compartir pendientes al grupo
+                </button>
                 <span className="promo-total">{pagosPendientes.length} pendientes</span>
               </div>
 
@@ -2883,6 +2932,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                             </span>
                           </td>
                           <td>
+                            {mostrarEstadoRecordatorio(cliente)}
                             <button
                               type="button"
                               className="payment-renew-button"
@@ -3000,7 +3050,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
           type="button"
           className="primary-button"
           disabled={!mesSeleccionado || mesSeleccionado > obtenerFecha().slice(0, 7)}
-          onClick={() => setMesGenerado(mesSeleccionado)}
+          onClick={() => { setMesGenerado(mesSeleccionado); setRevisionResumen(valor => valor + 1) }}
         >
           <BarChart3 size={17} />
           Generar resumen
@@ -3015,6 +3065,13 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
         <p>Selecciona un mes y presiona «Generar resumen» para consultar los resultados.</p>
       </div>
     ) : (
+      !resultadoCaja || resultadoCaja.error ? (
+        <div className="content-card">
+          <p role={resultadoCaja?.error ? 'alert' : 'status'}>{resultadoCaja?.error
+            ? 'No se pudo cargar la caja y la asistencia. Pulsa Generar resumen para reintentar.'
+            : 'Cargando ventas y asistencias del mes…'}</p>
+        </div>
+      ) :
       <>
         <div className="report-heading">
           <div>
@@ -3022,7 +3079,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
             <h2>{nombreMesReporte.charAt(0).toUpperCase() + nombreMesReporte.slice(1)}</h2>
           </div>
           <span className="report-payment-count">
-            {pagosDelMes.length} pagos registrados
+            {pagosDelMes.length + cajaDelMes.length} cobros registrados
           </span>
         </div>
 
@@ -3040,9 +3097,9 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
           </div>
 
           <div className="report-kpi">
-            <span>PAGOS REGISTRADOS</span>
-            <h2>{pagosDelMes.length}</h2>
-            <small>Inscripciones y renovaciones</small>
+            <span>COBROS REGISTRADOS</span>
+            <h2>{pagosDelMes.length + cajaDelMes.length}</h2>
+            <small>Pagos de membresía y cobros de caja</small>
           </div>
 
           <div className="report-kpi">
@@ -3175,6 +3232,11 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
 
           <div className="report-highlight-grid">
             <div>
+              <span>DÍA CON MÁS VENTAS DE CAJA</span>
+              <strong>{diasMayorVenta.map(({ dia }) => formatearFecha(`${mesGenerado}-${String(dia).padStart(2, '0')}`)).join(' · ') || 'Sin registros'}</strong>
+              <small>Q{mayorVentaDiaria.toFixed(2)} por día destacado</small>
+            </div>
+            <div>
               <span>DÍA CON MÁS INGRESOS</span>
               <strong>
                 {diaMayorIngreso.ingresos > 0
@@ -3185,22 +3247,58 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
             </div>
 
             <div>
-              <span>DÍA CON MÁS PAGOS</span>
+              <span>DÍA CON MÁS COBROS</span>
               <strong>
                 {diaMasPagos.cantidad > 0
                   ? `Día ${diaMasPagos.dia}`
                   : 'Sin registros'}
               </strong>
-              <small>{diaMasPagos.cantidad} pagos registrados</small>
+              <small>{diaMasPagos.cantidad} cobros registrados</small>
             </div>
           </div>
 
-          <p className="report-disclaimer">
-            Estos datos representan movimientos de pago, no asistencia.
-            Para conocer qué día llegan más personas al gimnasio sería necesario
-            registrar las entradas de los clientes.
-          </p>
+          <div className="report-highlight-grid">
+            <div>
+              <span>DÍA CON MÁS ASISTENCIAS</span>
+              <strong>{diasAsistenciaMaxima.map(([fecha]) => formatearFecha(fecha)).join(' · ') || 'Sin registros'}</strong>
+              <small>{diasAsistenciaMaxima[0]?.[1] || 0} asistencias por día destacado</small>
+            </div>
+            <div>
+              <span>TURNO CON MÁS ASISTENCIAS</span>
+              <strong>{turnosAsistenciaMaxima.map(([numero]) => `Turno ${numero}`).join(' · ') || 'Sin registros'}</strong>
+              <small>{turnosAsistenciaMaxima[0]?.[1] || 0} asistencias por turno destacado</small>
+            </div>
+            <div>
+              <span>ASISTENCIAS DEL MES</span>
+              <strong>{asistenciaMes.length}</strong>
+              <small>Incluye las visitas registradas</small>
+            </div>
+          </div>
+          {asistenciaResumen.turnos.length > 0 && (
+            <div className="table-container">
+              <table>
+                <thead><tr><th>Turno</th><th>Asistencias acumuladas</th></tr></thead>
+                <tbody>{asistenciaResumen.turnos.map(([turno, cantidad]) => <tr key={turno}><td>Turno {turno}</td><td>{cantidad}</td></tr>)}</tbody>
+              </table>
+            </div>
+          )}
         </div>
+        {registrosVentas.some(registro => registro.fecha?.startsWith(mesGenerado) && diasConCaja.has(registro.fecha)) && (
+          <p className="report-disclaimer">En las fechas con hoja antigua y ventas en caja, el total usa los cobros de caja para evitar duplicados.</p>
+        )}
+        {ventasPorConcepto.size > 0 && (
+          <div className="content-card">
+            <h3>Ventas de caja por artículo</h3>
+            <div className="table-container">
+              <table>
+                <thead><tr><th>Artículo</th><th>Unidades</th><th>Importe</th></tr></thead>
+                <tbody>{[...ventasPorConcepto].sort(([, a], [, b]) => b.total - a.total).map(([nombre, datos]) => (
+                  <tr key={nombre}><td>{nombre}</td><td>{datos.cantidad}</td><td>Q{(datos.total / 100).toFixed(2)}</td></tr>
+                ))}</tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </>
     )}
 
@@ -3400,17 +3498,21 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
 )}
 
         {/* MEDICIONES */}
+        {seccion === 'Corte de caja' && puedeUsarCorte && <CorteCaja />}
+
         {seccion === 'Ventas diarias' && (
           <>
             <div className="section-actions">
               <div>
                 <h2>Registro de ventas y visitas</h2>
-                <p>Registra las visitas y los productos vendidos cada día.</p>
+                <p>Consulta los cobros del día y administra el catálogo.</p>
               </div>
               <button type="button" className="primary-button" onClick={() => setMostrarNuevoProducto(!mostrarNuevoProducto)}>
                 <Plus size={17} /> Agregar producto
               </button>
             </div>
+
+            <CajaTurno operador={user.id} administrador SelectorOpcion={SelectorOpcion} />
 
             {mostrarNuevoProducto && (
               <div className="content-card form-card daily-product-form">
@@ -3457,7 +3559,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                   </button>
                   <div>
                     <h3>Detalle de ventas</h3>
-                    <p>{modoEdicionCatalogo ? 'Selecciona un producto para cambiar su nombre, precio o eliminarlo.' : 'Ingresa la cantidad de visitas y productos vendidos.'}</p>
+                    <p>{modoEdicionCatalogo ? 'Selecciona un producto para cambiar su nombre, precio o eliminarlo.' : 'Consulta el catálogo y las cantidades históricas de la fecha elegida.'}</p>
                   </div>
                 </div>
                 <span>IMPORTE</span>
@@ -3481,18 +3583,6 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                       ? formularioVentas[item.clave]
                       : (formularioVentas.productos?.[item.productoId] ?? '0')
                     const cantidad = Number(cantidadActual || 0)
-                    const actualizarCantidad = e => {
-                      const valor = e.target.value
-                      if (item.tipo === 'base') {
-                        setFormularioVentas(actual => ({ ...actual, [item.key]: valor }))
-                      } else {
-                        setFormularioVentas(actual => ({
-                          ...actual,
-                          productos: { ...actual.productos, [item.productoId]: valor }
-                        }))
-                      }
-                    }
-
                     return (
                       <div className={`daily-sales-row ${modoEdicionCatalogo ? "catalog-editing" : ""}`} key={item.key}>
                         <div className="daily-sales-row-product">
@@ -3501,7 +3591,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                         </div>
                         <label className="daily-sales-quantity">
                           <span>Cantidad</span>
-                          <input type="number" min="0" step="1" inputMode="numeric" value={cantidadActual} onChange={actualizarCantidad} />
+                          <input type="number" min="0" step="1" inputMode="numeric" value={cantidadActual} readOnly />
                         </label>
                         <strong className="daily-sales-row-total">Q{(cantidad * item.precio).toFixed(2)}</strong>
                         {modoEdicionCatalogo && (
@@ -3517,15 +3607,6 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                     )
                   })}
               </div>
-            </div>
-
-            <div className="content-card daily-sales-save-card">
-              <div><h3>Total del registro</h3><p>Confirma para guardar las cantidades correspondientes a {formatearFecha(fechaVenta)}.</p></div>
-              <div className="daily-sales-save-action">
-                <strong>Q{ingresosVentasDia.toFixed(2)}</strong>
-                <button type="button" className="primary-button" onClick={guardarVentasDia}><Save size={17} /> Guardar registro</button>
-              </div>
-              {avisoVentas && <p className="daily-sales-notice"><Check size={15} /> {avisoVentas}</p>}
             </div>
 
             <div className="content-card">
@@ -3922,7 +4003,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
   )
 }
 function PantallaLogin() {
-  const [correo, setCorreo] = useState('')
+  const [identificador, setIdentificador] = useState('')
   const [contrasena, setContrasena] = useState('')
   const [error, setError] = useState('')
   const [cargando, setCargando] = useState(false)
@@ -3939,19 +4020,29 @@ useEffect(() => {
 
   const iniciarSesion = async (e) => {
     e.preventDefault()
+    if (cargando) return
+    const email = identificadorACorreo(identificador)
+    if (!email) {
+      setError('Escribe tu usuario de instructor o tu correo de administrador.')
+      return
+    }
     setError('')
     setCargando(true)
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: identificadorACorreo(correo),
-      password: contrasena
-    })
-
-if (error) {
-  console.error('Error de inicio de sesión:', error)
-  setError(error.message)
-}
-    setCargando(false)
+    try {
+      const { error: errorAcceso } = await supabase.auth.signInWithPassword({
+        email,
+        password: contrasena
+      })
+      if (errorAcceso) {
+        setError(errorAcceso.code === 'invalid_credentials'
+          ? 'Revisa tu usuario o correo y tu contraseña.'
+          : 'No se pudo iniciar sesión. Inténtalo de nuevo en un momento.')
+      }
+    } catch {
+      setError('No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.')
+    } finally {
+      setCargando(false)
+    }
   }
 
   return (
@@ -3967,19 +4058,24 @@ if (error) {
         <h1>Zona Fitness Club</h1>
         <p>Inicia sesión para continuar</p>
 
-        <label>Correo electrónico o teléfono</label>
+        <label htmlFor="identificador-acceso">Usuario de instructor o correo de administrador</label>
         <input
           type="text"
-          value={correo}
-          onChange={(e) => setCorreo(e.target.value)}
-          placeholder="Tu correo o número de teléfono"
+          id="identificador-acceso"
+          value={identificador}
+          onChange={(e) => setIdentificador(e.target.value)}
+          placeholder="Tu usuario o correo"
+          autoCapitalize="none"
+          spellCheck={false}
           autoComplete="username"
           required
         />
 
-        <label>Contraseña</label>
+        <label htmlFor="contrasena-acceso">Contraseña</label>
         <input
+          id="contrasena-acceso"
           type="password"
+          autoComplete="current-password"
           value={contrasena}
           onChange={(e) => setContrasena(e.target.value)}
           placeholder="Tu contraseña"
@@ -4109,7 +4205,7 @@ function App() {
   }
 
   if (perfil.rol === 'admin') {
-    return <Aplicacion user={sesion.user} />
+    return <Aplicacion key={sesion.user.id} user={sesion.user} />
   }
 
   if (perfil.rol === 'empleado') {

@@ -1,9 +1,24 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Plus, UserX, UserCheck, X, AlertTriangle } from 'lucide-react'
 import { supabase } from './supabase'
+import { esCorreoInterno, usuarioACorreo } from './identificadorAcceso'
 import './GestionEmpleados.css'
 
-const FORMULARIO_VACIO = { nombre: '', telefono: '', contrasena: '' }
+const FORMULARIO_VACIO = { usuario: '', contrasena: '', nombre: '', telefono: '', correo: '' }
+
+const AYUDA_USUARIO = 'De 3 a 32 caracteres. Empieza con una letra. Usa letras sin tilde, números y, entre ellos, punto, guion o guion bajo.'
+
+function CampoUsuario({ valor, alCambiar, enFormulario = false }) {
+  return (
+    <label className={enFormulario ? undefined : "empleados-campo-modal"}>
+      Nombre de usuario
+      <input type="text" value={valor} onChange={evento => alCambiar(evento.target.value)}
+        placeholder="Ej. yeni.garcia" maxLength={32} minLength={3} required
+        autoCapitalize="none" autoComplete="off" spellCheck={false} />
+      <small>{AYUDA_USUARIO}</small>
+    </label>
+  )
+}
 
 function formatearFechaCreacion(fechaIso) {
   if (!fechaIso) return '—'
@@ -45,6 +60,9 @@ function GestionEmpleados() {
   const [formulario, setFormulario] = useState(FORMULARIO_VACIO)
   const [procesando, setProcesando] = useState(false)
   const [mensaje, setMensaje] = useState(null)
+  const [empleadoUsuario, setEmpleadoUsuario] = useState(null)
+  const [nuevoUsuario, setNuevoUsuario] = useState('')
+  const [errorUsuario, setErrorUsuario] = useState('')
   const [empleadoEstado, setEmpleadoEstado] = useState(null)
   const [empleadoContrasena, setEmpleadoContrasena] = useState(null)
   const [nuevaContrasena, setNuevaContrasena] = useState('')
@@ -52,7 +70,7 @@ function GestionEmpleados() {
   const cargarEmpleados = useCallback(async () => {
     const { data, error } = await supabase
       .from('perfiles')
-      .select('id, nombre_completo, telefono, correo, activo, creado_en')
+      .select('id, nombre_completo, usuario, telefono, correo, activo, creado_en')
       .eq('rol', 'empleado')
       .order('nombre_completo')
 
@@ -80,7 +98,11 @@ function GestionEmpleados() {
 
     if (procesando) return
 
-    if (!/^[0-9]{8}$/.test(formulario.telefono)) {
+    if (!usuarioACorreo(formulario.usuario)) {
+      setMensaje({ tipo: 'error', texto: AYUDA_USUARIO })
+      return
+    }
+    if (formulario.telefono && !/^[0-9]{8}$/.test(formulario.telefono)) {
       setMensaje({ tipo: 'error', texto: 'El número de teléfono debe tener exactamente 8 dígitos.' })
       return
     }
@@ -91,6 +113,8 @@ function GestionEmpleados() {
     try {
       await llamarFuncion({
         accion: 'crear',
+        usuario: formulario.usuario.trim().toLowerCase(),
+        correo: formulario.correo,
         nombre: formulario.nombre,
         telefono: formulario.telefono,
         contrasena: formulario.contrasena
@@ -98,7 +122,7 @@ function GestionEmpleados() {
 
       setMensaje({
         tipo: 'exito',
-        texto: `Cuenta creada para ${formulario.nombre.trim()}. Entrégale su número de teléfono y su contraseña inicial.`
+        texto: `Cuenta creada. El instructor puede entrar con el usuario ${formulario.usuario.trim().toLowerCase()} y su contraseña inicial.`
       })
       cerrarFormulario()
       await cargarEmpleados()
@@ -107,6 +131,31 @@ function GestionEmpleados() {
     }
 
     setProcesando(false)
+  }
+
+  async function guardarUsuario(evento) {
+    evento.preventDefault()
+    if (procesando || !empleadoUsuario) return
+    if (!usuarioACorreo(nuevoUsuario)) {
+      setErrorUsuario(AYUDA_USUARIO)
+      return
+    }
+
+    setProcesando(true)
+    setErrorUsuario('')
+    setMensaje(null)
+    try {
+      const { usuario } = await llamarFuncion({
+        accion: 'asignar_usuario', id: empleadoUsuario.id, usuario: nuevoUsuario.trim().toLowerCase()
+      })
+      setMensaje({ tipo: 'exito', texto: `Usuario guardado para ${empleadoUsuario.nombre_completo}: ${usuario}. Conserva su contraseña.` })
+      setEmpleadoUsuario(null)
+      await cargarEmpleados()
+    } catch (error) {
+      setErrorUsuario(error.message)
+    } finally {
+      setProcesando(false)
+    }
   }
 
   async function confirmarCambioEstado() {
@@ -189,37 +238,11 @@ function GestionEmpleados() {
       {mostrarFormulario && (
         <div className="content-card form-card">
           <h3>Crear cuenta de instructor</h3>
-          <p>El instructor iniciará sesión con su número de teléfono y esta contraseña inicial.</p>
+          <p>Para crear la cuenta solo necesitas un usuario y una contraseña inicial.</p>
 
           <form onSubmit={crearEmpleado}>
-            <div className="form-grid">
-              <label>
-                Nombre completo
-                <input
-                  type="text"
-                  placeholder="Nombre y apellidos"
-                  value={formulario.nombre}
-                  onChange={evento => setFormulario({ ...formulario, nombre: evento.target.value })}
-                  required
-                />
-              </label>
-
-              <label>
-                Número de teléfono
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="8 dígitos"
-                  maxLength={8}
-                  value={formulario.telefono}
-                  onChange={evento => setFormulario({
-                    ...formulario,
-                    telefono: evento.target.value.replace(/[^0-9]/g, '')
-                  })}
-                  required
-                />
-              </label>
-
+            <div className="form-grid empleados-alta-grid">
+              <CampoUsuario enFormulario valor={formulario.usuario} alCambiar={usuario => setFormulario({ ...formulario, usuario })} />
               <label>
                 Contraseña inicial
                 <input
@@ -231,6 +254,36 @@ function GestionEmpleados() {
                   minLength={8}
                   required
                 />
+              </label>
+              <label>
+                Nombre completo (opcional)
+                <input
+                  type="text"
+                  placeholder="Nombre y apellidos"
+                  value={formulario.nombre}
+                  onChange={evento => setFormulario({ ...formulario, nombre: evento.target.value })}
+                />
+              </label>
+
+              <label>
+                Teléfono de contacto (opcional)
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="8 dígitos"
+                  maxLength={8}
+                  value={formulario.telefono}
+                  onChange={evento => setFormulario({
+                    ...formulario,
+                    telefono: evento.target.value.replace(/[^0-9]/g, '')
+                  })}
+                />
+              </label>
+
+              <label>
+                Correo de contacto (opcional)
+                <input type="email" value={formulario.correo} placeholder="correo@ejemplo.com"
+                  onChange={evento => setFormulario({ ...formulario, correo: evento.target.value })} />
               </label>
             </div>
 
@@ -265,7 +318,8 @@ function GestionEmpleados() {
               <thead>
                 <tr>
                   <th>INSTRUCTOR</th>
-                  <th>TELÉFONO</th>
+                  <th>USUARIO</th>
+                  <th>CONTACTO</th>
                   <th>CREADA</th>
                   <th>ESTADO</th>
                   <th>ACCIONES</th>
@@ -275,7 +329,11 @@ function GestionEmpleados() {
                 {empleados.map(empleado => (
                   <tr key={empleado.id}>
                     <td><strong>{empleado.nombre_completo}</strong></td>
-                    <td>{empleado.telefono || empleado.correo || '—'}</td>
+                    <td>{empleado.usuario || 'Por asignar'}</td>
+                    <td>
+                      <div>{empleado.telefono || '—'}</div>
+                      {empleado.correo && !esCorreoInterno(empleado.correo) && <div>{empleado.correo}</div>}
+                    </td>
                     <td>{formatearFechaCreacion(empleado.creado_en)}</td>
                     <td>
                       <span className={empleado.activo ? 'status-active' : 'status-expired'}>
@@ -284,6 +342,14 @@ function GestionEmpleados() {
                     </td>
                     <td>
                       <div className="empleados-acciones">
+                        <button type="button" className="cancel-button"
+                          onClick={() => {
+                            setEmpleadoUsuario(empleado)
+                            setNuevoUsuario(empleado.usuario || '')
+                            setErrorUsuario('')
+                          }}>
+                          {empleado.usuario ? 'Cambiar usuario' : 'Asignar usuario'}
+                        </button>
                         <button
                           type="button"
                           className="cancel-button"
@@ -311,6 +377,26 @@ function GestionEmpleados() {
           </div>
         )}
       </div>
+
+      {empleadoUsuario && (
+        <div className="modal-overlay">
+          <div className="confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="titulo-usuario">
+            <button type="button" className="modal-close" aria-label="Cerrar" disabled={procesando} onClick={() => setEmpleadoUsuario(null)}>
+              <X size={19} />
+            </button>
+            <h2 id="titulo-usuario">{empleadoUsuario.usuario ? 'Cambiar usuario' : 'Asignar usuario'}</h2>
+            <p className="modal-description">{empleadoUsuario.nombre_completo} usará este usuario con su contraseña actual.</p>
+            <form onSubmit={guardarUsuario}>
+              <CampoUsuario valor={nuevoUsuario} alCambiar={setNuevoUsuario} />
+              {errorUsuario && <p className="empleados-mensaje empleados-mensaje-error" role="alert">{errorUsuario}</p>}
+              <div className="modal-actions">
+                <button type="button" className="modal-cancel-button" disabled={procesando} onClick={() => setEmpleadoUsuario(null)}>Cancelar</button>
+                <button type="submit" className="modal-primary-button" disabled={procesando}>{procesando ? 'Guardando...' : 'Guardar usuario'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {empleadoEstado && (
         <div className="modal-overlay">

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Users, Sun, Moon } from 'lucide-react'
 import { supabase } from './supabase'
 import './PanelInstructores.css'
+import CajaTurno, { Visitante, nombreVisitanteValido } from './CajaTurno'
 
 // Misma preferencia de tema que usa el panel administrativo y la pantalla de login
 const CLAVE_TEMA = 'zona-fitness-tema'
@@ -94,6 +95,8 @@ useEffect(() => {
   const [errorAccion, setErrorAccion] = useState('')
   const [procesando, setProcesando] = useState(false)
   const [confirmandoCierre, setConfirmandoCierre] = useState(false)
+  const [borradorVisita, setBorradorVisita] = useState(null)
+  const [solicitudVisita, setSolicitudVisita] = useState(null)
   const [busqueda, setBusqueda] = useState('')
   const [resultados, setResultados] = useState([])
   const [buscando, setBuscando] = useState(false)
@@ -428,13 +431,46 @@ useEffect(() => {
 
             {mensajeExito && <p className="pi-exito">{mensajeExito}</p>}
 
+            {borradorVisita ? (
+              <form className="caja-visita-asistencia" onSubmit={evento => {
+                evento.preventDefault()
+                const nombre = borradorVisita.nombre.trim().replace(/\s+/g, ' ')
+                if (!borradorVisita.id && !nombreVisitanteValido.test(nombre)) return
+                setSolicitudVisita({ ...borradorVisita, nombre })
+                setBorradorVisita(null)
+              }}>
+                <Visitante enAsistencia valor={borradorVisita} cambiar={setBorradorVisita} />
+                <div className="caja-acciones-visita">
+                  <button type="button" className="pi-boton pi-boton-secundario" onClick={() => setBorradorVisita(null)}>Volver a asistencia</button>
+                  <button type="submit" className="pi-boton pi-boton-primario"
+                    disabled={!borradorVisita.id && !nombreVisitanteValido.test(borradorVisita.nombre.trim().replace(/\s+/g, ' '))}>
+                    Agregar a la cuenta
+                  </button>
+                </div>
+              </form>
+            ) : <>
+              <button type="button" className="pi-boton pi-boton-primario caja-acceso-visita"
+                onClick={() => setBorradorVisita({ nombre: !seleccionado && resultados.length === 0 && /\p{L}/u.test(busqueda) ? busqueda.trim() : '' })}>
+                Agregar visita
+              </button>
+
             <input
               type="search"
               className="pi-buscador"
               placeholder="Buscar por nombre, apellido o teléfono"
               value={busqueda}
               onChange={evento => {
-                setBusqueda(evento.target.value)
+                const campo = evento.currentTarget
+                const posicion = campo.selectionStart
+                const capitalizar = texto => texto.replace(/(^|[^\p{L}\p{M}\p{N}])(\p{L})/gu,
+                  (_, separador, inicial) => separador + inicial.toLocaleUpperCase('es-GT'))
+                const valor = capitalizar(campo.value)
+                if (valor !== campo.value) {
+                  const cursor = posicion === null ? null : capitalizar(campo.value.slice(0, posicion)).length
+                  campo.value = valor
+                  if (cursor !== null) campo.setSelectionRange(cursor, cursor)
+                }
+                setBusqueda(valor)
                 setSeleccionado(null)
                 setErrorAsistencia('')
               }}
@@ -524,8 +560,11 @@ useEffect(() => {
                 </button>
               </div>
             )}
+            </>}
           </section>
         )}
+        <CajaTurno operador={perfil.id} turnoId={!error && turno?.estado === 'abierto' ? turno.turno_id : null}
+          solicitud={solicitudVisita} alCobrar={consultarTurno} />
       </main>
 
       {confirmandoCierre && (

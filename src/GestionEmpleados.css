@@ -41,3 +41,11 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+.empleados-alta-grid {
+  align-items: start;
+}
+
+.empleados-alta-grid > label {
+  margin: 0;
+}

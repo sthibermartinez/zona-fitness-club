@@ -663,7 +663,7 @@ function AsistenciaAdmin({ SelectorFecha, SelectorOpcion }) {
                           <strong>{tipoEvento(evento.tipo)}</strong>
                           <span><Clock size={13} /> {formatearFechaHora(evento.ocurrido_en)}</span>
                         </div>
-                        <p>{perfil?.nombre_completo || 'Usuario no disponible'}{perfil?.rol ? ` · ${perfil.rol}` : ''}</p>
+                        <p>{perfil?.nombre_completo || (evento.tipo === 'cierre' && !evento.usuario_id ? 'Sistema · Cierre automático' : 'Usuario no disponible')}{perfil?.rol ? ` · ${perfil.rol}` : ''}</p>
                         {evento.nota && <small>{evento.nota}</small>}
                       </div>
                     </div>

@@ -1,22 +1,24 @@
-// Los instructores inician sesión con su número de teléfono (8 dígitos).
-// Por dentro, Supabase guarda ese número como un correo interno que nadie ve.
-// IMPORTANTE: este dominio debe ser EXACTAMENTE el mismo que usa la función
-// "gestionar-empleados" (constante DOMINIO_TELEFONO en ese archivo).
+// La función gestionar-empleados usa el mismo dominio y el mismo prefijo.
 export const DOMINIO_TELEFONO = 'instructores.zonafitness.app'
 
 export function telefonoACorreo(telefono) {
   return `502${telefono}@${DOMINIO_TELEFONO}`
 }
 
-// Si el texto es un número de 8 dígitos lo convierte al correo interno.
-// Si no, se trata como un correo normal (por ejemplo, el del administrador).
+export function usuarioACorreo(texto) {
+  const usuario = String(texto ?? '').trim().toLowerCase()
+  if (usuario.length < 3 || usuario.length > 32 || !/^[a-z][a-z0-9]*([._-][a-z0-9]+)*$/.test(usuario)) return null
+  return `u-${usuario}@${DOMINIO_TELEFONO}`
+}
+
+export function esCorreoInterno(texto) {
+  return /^(502[0-9]{8}|u-[a-z0-9._-]+)@instructores\.zonafitness\.app$/i.test(texto || '')
+}
+
 export function identificadorACorreo(texto) {
-  const limpio = String(texto || '').trim()
-  const soloDigitos = limpio.replace(/[\s-]/g, '')
-
-  if (/^[0-9]{8}$/.test(soloDigitos)) {
-    return telefonoACorreo(soloDigitos)
-  }
-
-  return limpio
+  const valor = String(texto ?? '').trim()
+  if (valor.includes('@')) return esCorreoInterno(valor) ? null : valor
+  const telefono = valor.replace(/[\s-]/g, '')
+  if (/^[0-9]{8}$/.test(telefono)) return telefonoACorreo(telefono)
+  return usuarioACorreo(valor)
 }
