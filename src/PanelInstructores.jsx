@@ -3,6 +3,7 @@ import { Users, Sun, Moon } from 'lucide-react'
 import { supabase } from './supabase'
 import './PanelInstructores.css'
 import Mediciones from './Mediciones'
+import RenovarRecepcion from './RenovarRecepcion'
 import CajaTurno, { Visitante, nombreVisitanteValido } from './CajaTurno'
 
 // Misma preferencia de tema que usa el panel administrativo y la pantalla de login
@@ -39,7 +40,9 @@ function formatearFechaCorta(fecha) {
 function obtenerEstadoCliente(cliente) {
   if (!cliente.activo) return 'inactivo'
   if (!cliente.vencimiento) return 'pendiente'
-  return cliente.vigente ? 'vigente' : 'vencida'
+  if (cliente.vigente) return 'vigente'
+  const hoy = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Guatemala' }).format(new Date())
+  return cliente.vencimiento < hoy ? 'vencida' : 'pendiente'
 }
 
 const ETIQUETAS_CLIENTE = {
@@ -561,9 +564,19 @@ useEffect(() => {
                       ? 'El cliente está inactivo. No se puede registrar su asistencia.'
                       : estadoSeleccionado === 'pendiente'
                         ? 'La membresía todavía no tiene vigencia. Consulta la fecha de inicio con administración.'
-                        : `La membresía venció el ${formatearFechaCorta(seleccionado.vencimiento)}. No se puede registrar su asistencia. Avisa a la administración.`}
+                        : `La membresía venció el ${formatearFechaCorta(seleccionado.vencimiento)}. Renueva la membresía para registrar su asistencia.`}
                   </p>
                 )}
+
+                {estadoSeleccionado === 'vencida' && <RenovarRecepcion key={seleccionado.id}
+                  cliente={seleccionado} turno={turno.turno_id} operador={perfil.id}
+                  onCobro={registro => {
+                    const actualizado = { ...seleccionado, vigente: true, vencimiento: registro.fechaFin }
+                    setSeleccionado(actual => actual?.id === seleccionado.id ? actualizado : actual)
+                    setResultados(actuales => actuales.map(cliente => cliente.id === actualizado.id ? actualizado : cliente))
+                    setMensajeExito('Pago registrado. El recibo quedó pendiente en Administración.')
+                    consultarTurno()
+                  }} />}
 
                 <button
                   type="button"

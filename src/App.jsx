@@ -1,3 +1,4 @@
+import CierreEfectivo from './CierreEfectivo'
 import { tipoPaqueteNavidad, precioNavidad, promocionDisponible, registrarPaquete } from './promocionNavidad'
 import Mediciones from './Mediciones'
 import CorteCaja from './CorteCaja'
@@ -47,9 +48,13 @@ function obtenerFecha() {
 }
 // Poner mayúscula inicial en cada palabra de un nombre
 function convertirNombre(texto) {
-  return texto.replace(/(^|\s)([a-záéíóúüñ])/g, (coincidencia, espacio, letra) =>
-    espacio + letra.toUpperCase()
-  )
+  return texto.replace(/(^|\s)(\p{L})/gu,
+    (_, espacio, letra) => espacio + letra.toLocaleUpperCase('es-GT'))
+}
+
+function nombreClienteCompleto(nombre) {
+  const palabras = nombre.split(' ')
+  return palabras.length >= 3 && palabras.every(palabra => /^\p{L}[\p{L}\p{M}]*([’'-]\p{L}[\p{L}\p{M}]*)*$/u.test(palabra))
 }
 
 // Poner mayúscula al inicio de cada oración
@@ -878,7 +883,7 @@ useEffect(() => {
   )
   const promocionSeleccionada = promocionesDisponibles.find(promo => promo.nombre === formulario.promocion)
   const altaNavidena = promocionSeleccionada?.aplicaA === tipoPaqueteNavidad
-  const editandoPaquete = clienteEditando && clientes.some(cliente => cliente.id === clienteEditando && cliente.tipo === tipoPaqueteNavidad)
+  const editandoPaquete = clienteEditando && clientes.some(cliente => cliente.id === clienteEditando && (cliente.tipo === tipoPaqueteNavidad || obtenerUltimaMembresia(cliente)?.ventaId))
 
   const precioFinal = promocionSeleccionada
     ? (altaNavidena ? precioNavidad : promocionSeleccionada.precio)
@@ -1041,6 +1046,61 @@ useEffect(() => {
     return coincideBusqueda && coincideFiltro
   })
 
+  const [recibosRecepcion, setRecibosRecepcion] = useState([])
+  const [errorRecibosRecepcion, setErrorRecibosRecepcion] = useState('')
+  const [recepcionRevision, setRecepcionRevision] = useState(0)
+  const [confirmandoEnvio, setConfirmandoEnvio] = useState(false)
+  useEffect(() => {
+    if (!datosCargados) return
+    let vigente = true
+    async function actualizarRecepcion() {
+      const { data, error } = await supabase.from('renovaciones_recepcion')
+        .select('id,cliente_id,registro').is('recibo_enviado_en', null)
+      if (!vigente) return
+      if (error) { setErrorRecibosRecepcion('No se pudieron consultar los recibos pendientes.'); return }
+      setErrorRecibosRecepcion('')
+      setRecibosRecepcion((data || []).sort((a, b) => a.registro.cobradoEn.localeCompare(b.registro.cobradoEn)))
+      const { data: directorio } = await supabase.from('zona_fitness_datos').select('clientes').eq('user_id', user.id).maybeSingle()
+      if (!vigente || !Array.isArray(directorio?.clientes)) return
+      const porId = new Map(directorio.clientes.map(cliente => [String(cliente.id), cliente]))
+      setClientes(actuales => {
+        let cambio = false
+        const siguientes = actuales.map(cliente => {
+          const remoto = porId.get(String(cliente.id))
+          if (!remoto) return cliente
+          const historial = obtenerHistorial(cliente)
+          const remotoHistorial = obtenerHistorial(remoto)
+          if (!remotoHistorial.some(r => r.ventaId && !historial.some(p => p.ventaId === r.ventaId))) return cliente
+          cambio = true
+          return { ...remoto, nombre: cliente.nombre, telefono: cliente.telefono,
+            recordatoriosEnviados: cliente.recordatoriosEnviados }
+        })
+        return cambio ? siguientes : actuales
+      })
+    }
+    actualizarRecepcion()
+    const timer = setInterval(actualizarRecepcion, 15000)
+    window.addEventListener('focus', actualizarRecepcion)
+    return () => { vigente = false; clearInterval(timer); window.removeEventListener('focus', actualizarRecepcion) }
+  }, [datosCargados, user.id, recepcionRevision])
+
+  async function confirmarEnvioRecepcion() {
+    if (confirmandoEnvio || !aviso?.registro?.ventaId) return
+    setConfirmandoEnvio(true)
+    setErrorRecibo('')
+    try {
+      const { error } = await supabase.rpc('confirmar_recibo_recepcion', { p_id: aviso.registro.ventaId })
+      if (error) throw error
+      setRecibosRecepcion(actuales => actuales.filter(item => item.id !== aviso.registro.ventaId))
+      setRecepcionRevision(n => n + 1)
+      cerrarAviso()
+    } catch {
+      setErrorRecibo('No se pudo guardar la confirmación. Puedes reintentar.')
+    } finally {
+      setConfirmandoEnvio(false)
+    }
+  }
+
   const historialPagos = clientes
     .flatMap(cliente =>
       obtenerHistorial(cliente).map(registro => ({
@@ -1051,11 +1111,11 @@ useEffect(() => {
       }))
     )
     .sort((a, b) =>
-      (b.fechaPago || b.fechaInicio || '').localeCompare(a.fechaPago || a.fechaInicio || '')
+      (b.cobradoEn || b.fechaPago || b.fechaInicio || '').localeCompare(a.cobradoEn || a.fechaPago || a.fechaInicio || '')
     )
 // DATOS DEL RESUMEN MENSUAL
 const pagosDelMes = mesGenerado
-  ? historialPagos.filter(pago =>
+  ? historialPagos.filter(pago => !pago.ventaId &&
       (pago.fechaPago || pago.fechaInicio || '').slice(0, 7) === mesGenerado
     )
   : []
@@ -1069,7 +1129,7 @@ const fechaMesAnterior = mesGenerado
   : ''
 
 const pagosMesAnterior = fechaMesAnterior
-  ? historialPagos.filter(pago =>
+  ? historialPagos.filter(pago => !pago.ventaId &&
       (pago.fechaPago || pago.fechaInicio || '').slice(0, 7) === fechaMesAnterior
     )
   : []
@@ -1088,11 +1148,11 @@ useEffect(() => {
 
 const resultadoCaja = resumenCaja?.mes === mesGenerado && resumenCaja.revision === revisionResumen ? resumenCaja : null
 const ventasCaja = resultadoCaja?.ventas || []
-const cajaDelMes = ventasCaja.filter(venta => venta.fecha.startsWith(mesGenerado))
+const cajaDelMes = ventasCaja.filter(venta => !venta.anulada_en && venta.fecha.startsWith(mesGenerado))
 const diasConCaja = new Set(ventasCaja.map(venta => venta.fecha))
 // Las hojas antiguas y los cobros de caja pueden contener la misma venta.
 const ingresosCaja = [
-  ...ventasCaja.map(venta => ({ fecha: venta.fecha, total: Number(venta.total) })),
+  ...ventasCaja.filter(venta => !venta.anulada_en).map(venta => ({ fecha: venta.fecha, total: Number(venta.total) })),
   ...registrosVentas.filter(registro => !diasConCaja.has(registro.fecha))
     .map(registro => ({ fecha: registro.fecha, total: calcularIngresosRegistroVenta(registro) }))
 ]
@@ -1446,6 +1506,13 @@ const nombreMesReporte = mesGenerado
   function guardarCliente(evento) {
     evento.preventDefault()
 
+    const nombre = convertirNombre(formulario.nombre.trim().replace(/\s+/g, ' '))
+    const fichaActual = clientes.find(cliente => cliente.id === clienteEditando)
+    if ((!fichaActual || formulario.nombre.trim() !== fichaActual.nombre.trim()) && !nombreClienteCompleto(nombre)) {
+      setAviso({ tipo: 'fecha', titulo: 'Completa el nombre', mensaje: 'Escribe al menos un nombre y dos apellidos.' })
+      return
+    }
+
     if (!editandoPaquete && (
       !formulario.fechaInicio ||
       formulario.fechaInicio.slice(0, 4) !== String(new Date().getFullYear())
@@ -1471,7 +1538,7 @@ const nombreMesReporte = mesGenerado
 
     if (editandoPaquete) {
       setClientes(actuales => actuales.map(cliente => cliente.id === clienteEditando
-        ? { ...cliente, nombre: formulario.nombre.trim(), telefono: telefonoLimpio } : cliente))
+        ? { ...cliente, nombre, telefono: telefonoLimpio } : cliente))
       cancelarEdicionCliente()
       return
     }
@@ -1505,7 +1572,7 @@ const nombreMesReporte = mesGenerado
 
           return {
             ...cliente,
-            nombre: formulario.nombre.trim(),
+            nombre,
             telefono: telefonoLimpio,
             fechaInicio: formulario.fechaInicio,
             tipo: formulario.tipo,
@@ -1541,7 +1608,7 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
     const nuevoCliente = {
       id: Date.now(),
       ...formulario,
-      nombre: formulario.nombre.trim(),
+      nombre,
       precio: precioFinal,
       promocion: promocionSeleccionada?.nombre || '',
       telefono: telefonoLimpio,
@@ -1640,8 +1707,10 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
       return
     }
 
-    const fechaInicio = fechaInicioRenovacion
-    const fechaFin = fechaFinRenovacion
+    const paqueteConfirmado = renovacionNavidena
+      ? registrarPaquete(clienteActual, promocionRenovacion, fechaPagoSeleccionada) : null
+    const fechaInicio = paqueteConfirmado?.fechaInicio ?? fechaInicioRenovacion
+    const fechaFin = paqueteConfirmado?.fechaFin ?? fechaFinRenovacion
 
     const nuevoRegistro = {
       id: Date.now(),
@@ -1657,7 +1726,7 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
       modalidad: vigente && formularioRenovacion.modalidad === 'anticipado'
         ? 'Pago anticipado'
         : 'Renovación normal',
-      ...(paqueteRenovacion ? { ...paqueteRenovacion, modalidad: 'Paquete pagado' } : {})
+      ...(paqueteConfirmado ? { ...paqueteConfirmado, modalidad: 'Paquete pagado' } : {})
     }
 
     setClientes(actuales =>
@@ -1748,6 +1817,7 @@ const precioCobrado = Number(precioFinal) + (cobrarInscripcion ? 50 : 0)
         cliente,
         registro,
         copiado,
+        whatsappUrl: url,
         nombreArchivo
       })
     } catch (error) {
@@ -2099,6 +2169,24 @@ onClick={cambiarTema}      title={modoOscuro ? 'Activar modo claro' : 'Activar m
         {/* INICIO */}
         {seccion === 'Inicio' && (
           <>
+            <div className="content-card">
+              <h3>Recibos pendientes por enviar</h3>
+              {errorRecibosRecepcion && <p role="alert">{errorRecibosRecepcion}</p>}
+              {!errorRecibosRecepcion && recibosRecepcion.length === 0 && <p>No hay recibos pendientes.</p>}
+              {recibosRecepcion.map(({ id, cliente_id, registro }) => {
+                const cliente = clientes.find(item => String(item.id) === cliente_id) || {
+                  nombre: registro.nombreCliente, telefono: registro.telefonoCliente
+                }
+                return <div className="reminder-item" key={id}>
+                  <div><strong>{cliente.nombre}</strong><p>Efectivo · Q{Number(registro.precio).toFixed(2)} · {new Date(registro.cobradoEn).toLocaleString('es-GT', { timeZone: 'America/Guatemala' })}</p></div>
+                  <button type="button" className="cancel-button" onClick={() => {
+                    setErrorRecibo('')
+                    setAviso({ tipo: 'renovacionExitosa', cliente, registro, esConsultaRecibo: true })
+                  }}>Ver y enviar recibo</button>
+                </div>
+              })}
+            </div>
+
             <div className="welcome">
               <div>
                 <h2>¡Bienvenido a Zona Fitness!</h2>
@@ -2120,7 +2208,16 @@ onClick={cambiarTema}      title={modoOscuro ? 'Activar modo claro' : 'Activar m
                 <p className="empty">No hay clientes dentro del período de recordatorios.</p>
               ) : (
                 <div className="reminder-list">
-                  {clientesPorVencer.map(cliente => (
+                  {[
+                    ['Vencen hoy', cliente => cliente.vencimiento === obtenerFecha()],
+                    ['Vencen pronto', cliente => cliente.vencimiento > obtenerFecha()],
+                    ['Ya vencieron', cliente => cliente.vencimiento < obtenerFecha()]
+                  ].map(([titulo, filtrar]) => {
+                    const personas = clientesPorVencer.filter(filtrar)
+                    return personas.length > 0 && <section key={titulo}>
+                      <h4>{titulo} · {personas.length}</h4>
+                      {personas.map(cliente => (
+
                       <div className="reminder-item" key={cliente.id}>
                         <div className="reminder-person">
                           <div className="reminder-avatar">
@@ -2139,9 +2236,17 @@ onClick={cambiarTema}      title={modoOscuro ? 'Activar modo claro' : 'Activar m
 
                         <div className="reminder-action">
                           {mostrarEstadoRecordatorio(cliente)}
+                          <button type="button" className="cancel-button" onClick={() => {
+                            setBusqueda(cliente.telefono || cliente.nombre)
+                            setMembresiaExpandida(cliente.id)
+                            setFiltroMembresias('Todas')
+                            abrirSeccion('Membresías')
+                          }}>Ver membresía</button>
                         </div>
                       </div>
-                  ))}
+                      ))}
+                    </section>
+                  })}
                 </div>
               )}
             </div>
@@ -2240,12 +2345,24 @@ onClick={cambiarTema}      title={modoOscuro ? 'Activar modo claro' : 'Activar m
                 <form onSubmit={guardarCliente}>
                   <div className="form-grid">
                     <label>
-                      Nombre completo
+                      Nombre y dos apellidos
                       <input
                         type="text"
-                        placeholder="Nombre y apellidos"
+                        placeholder="Ej. Luis Pérez García"
+                        autoCapitalize="words"
                         value={formulario.nombre}
-onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.value) })}                        required
+                        onChange={e => {
+                          const campo = e.currentTarget
+                          const nombre = convertirNombre(campo.value)
+                          if (nombre !== campo.value) {
+                            const cursor = campo.selectionStart
+                            const posicion = cursor === null ? null : convertirNombre(campo.value.slice(0, cursor)).length
+                            campo.value = nombre
+                            if (posicion !== null) campo.setSelectionRange(posicion, posicion)
+                          }
+                          setFormulario(actual => ({ ...actual, nombre }))
+                        }}
+                        required
                       />
                     </label>
 
@@ -2631,12 +2748,14 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                                                   {formatearFecha(registro.fechaInicio)} al {formatearFecha(registro.fechaFin)}
                                                 </small>
                                               </td>
-                                              <td>{formatearFecha(registro.fechaPago || registro.fechaInicio)}</td>
+                                              <td>{formatearFecha(registro.fechaPago || registro.fechaInicio)}
+                                                {registro.cobradoEn && <small> · {new Date(registro.cobradoEn).toLocaleTimeString('es-GT', { timeZone: 'America/Guatemala' })}</small>}
+                                              </td>
                                               <td>
                                                 {registro.metodoPago || 'Sin especificar'}
                                                 <br />
                                                 <small>{registro.modalidad || 'Membresía'}</small>
-                                                {registro.tipo === tipoPaqueteNavidad && registro.numeroRecibo && (
+                                                {(registro.tipo === tipoPaqueteNavidad || registro.ventaId) && registro.numeroRecibo && (
                                                   <button type="button" className="cancel-button"
                                                     onClick={() => { setErrorRecibo(''); setAviso({ tipo: 'renovacionExitosa', cliente, registro, esConsultaRecibo: true }) }}>
                                                     Ver recibo
@@ -3043,7 +3162,10 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                             <strong>{pago.nombreCliente}</strong>
                             <small className="client-promo-label">{pago.telefonoCliente}</small>
                           </td>
-                          <td>{formatearFecha(pago.fechaPago || pago.fechaInicio)}</td>
+                          <td>
+                            {formatearFecha(pago.fechaPago || pago.fechaInicio)}
+                            {pago.cobradoEn && <small className="client-promo-label">{new Date(pago.cobradoEn).toLocaleTimeString('es-GT', { timeZone: 'America/Guatemala' })}</small>}
+                          </td>
                           <td>
                             {pago.modalidad || 'Membresía'}
                             <small className="client-promo-label">
@@ -3577,6 +3699,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
             </div>
 
             <CajaTurno operador={user.id} administrador SelectorOpcion={SelectorOpcion} />
+            <CierreEfectivo />
 
             {mostrarNuevoProducto && (
               <div className="content-card form-card daily-product-form">
@@ -3782,6 +3905,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
 
             <form onSubmit={guardarRenovacion}>
               <div className="renewal-form">
+                {!renovacionNavidena && <>
                 <label>
                   Tipo de renovación
                   <SelectorOpcion
@@ -3806,6 +3930,14 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                       Se conservarán los días que todavía tiene disponibles.
                     </p>
                   )}
+
+                </>}
+                {renovacionNavidena && <p className="renewal-note">
+                  <Check size={15} />
+                  {fechaInicioRenovacion === clienteRenovando.vencimiento
+                    ? `Se conserva la fecha habitual de renovación: ${formatearFecha(fechaInicioRenovacion)}.`
+                    : 'La cobertura comienza en la fecha del pago porque la membresía anterior ya venció.'}
+                </p>}
 
                 <label>
                   Tipo de membresía
@@ -3854,7 +3986,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                     onChange={fecha => setFormularioRenovacion(actual => ({
                       ...actual,
                       fechaPago: fecha,
-                      promocion: ''
+                      promocion: renovacionNavidena ? actual.promocion : ''
                     }))}
                   />
                 </label>
@@ -3944,7 +4076,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
 
             {aviso.tipo === 'renovacionExitosa' && (
               <>
-                <h2 id="modal-title">{aviso.esConsultaRecibo ? 'Recibo del paquete navideño' : aviso.esNuevoCliente ? 'Cliente registrado' : 'Renovación registrada'}</h2>
+                <h2 id="modal-title">{aviso.esConsultaRecibo ? 'Recibo de membresía' : aviso.esNuevoCliente ? 'Cliente registrado' : 'Renovación registrada'}</h2>
                 <p className="modal-description">
                   {aviso.esConsultaRecibo ? obtenerConceptoRecibo(aviso.registro) : aviso.esNuevoCliente
                     ? `${aviso.cliente.nombre} se registró correctamente.`
@@ -3989,6 +4121,11 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                   <strong>{aviso.cliente.nombre}</strong>
                   <small>Q{Number(aviso.registro.precio || 0).toFixed(2)}</small>
                 </div>
+                {aviso.registro.ventaId && aviso.whatsappUrl && <a className="cancel-button"
+                  href={aviso.whatsappUrl} target="_blank" rel="noopener noreferrer">Abrir chat del cliente</a>}
+                {aviso.registro.ventaId && <button type="button" className="modal-primary-button"
+                  disabled={confirmandoEnvio} onClick={confirmarEnvioRecepcion}>Sí, ya lo envié</button>}
+                {errorRecibo && <p role="alert">{errorRecibo}</p>}
                 <button className="modal-primary-button" onClick={cerrarAviso}>Entendido</button>
               </>
             )}
