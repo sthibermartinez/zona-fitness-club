@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Users, Sun, Moon } from 'lucide-react'
 import { supabase } from './supabase'
 import './PanelInstructores.css'
+import Mediciones from './Mediciones'
 import CajaTurno, { Visitante, nombreVisitanteValido } from './CajaTurno'
 
 // Misma preferencia de tema que usa el panel administrativo y la pantalla de login
@@ -82,7 +83,8 @@ export function PantallaAcceso({ titulo, mensaje, onReintentar }) {
 }
 
 // Panel exclusivo para instructores (etapa 3: abrir y cerrar turno)
-function PanelInstructores({ perfil }) {
+function PanelInstructores({ perfil, SelectorOpcion, SelectorFecha }) {
+  const [mostrarMediciones, setMostrarMediciones] = useState(false)
   const [ahora, setAhora] = useState(() => new Date())
 
 useEffect(() => {
@@ -322,6 +324,15 @@ useEffect(() => {
       </header>
 
       <main className="pi-contenido">
+        <nav className="pi-navegacion" aria-label="Panel del instructor">
+          <button type="button" aria-pressed={!mostrarMediciones}
+            className={`pi-boton ${mostrarMediciones ? 'pi-boton-secundario' : 'pi-boton-primario'}`}
+            onClick={() => setMostrarMediciones(false)}>Asistencia y caja</button>
+          <button type="button" aria-pressed={mostrarMediciones}
+            className={`pi-boton ${mostrarMediciones ? 'pi-boton-primario' : 'pi-boton-secundario'}`}
+            onClick={() => setMostrarMediciones(true)}>Mediciones</button>
+        </nav>
+        <div hidden={mostrarMediciones} className="pi-operacion-turno">
         <div className="pi-pagina-titulo">
           <h1>Asistencia</h1>
           <p>Abre tu turno y registra la asistencia de los clientes.</p>
@@ -569,6 +580,10 @@ useEffect(() => {
         )}
         <CajaTurno operador={perfil.id} turnoId={!error && turno?.estado === 'abierto' ? turno.turno_id : null}
           solicitud={solicitudVisita} alCobrar={consultarTurno} />
+        </div>
+        {mostrarMediciones && <div className={modoOscuro ? 'pi-mediciones dark-mode' : 'pi-mediciones'}>
+          <Mediciones operador={perfil.id} turnoId={!error && turno?.estado === 'abierto' ? turno.turno_id : null} clientes={[]} SelectorOpcion={SelectorOpcion} SelectorFecha={SelectorFecha} />
+        </div>}
       </main>
 
       {confirmandoCierre && (

@@ -1,0 +1,49 @@
+.pi-navegacion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  margin-bottom: 1rem;
+}
+.pi-operacion-turno:not([hidden]), .pi-mediciones {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+.pi-operacion-turno[hidden] { display: none; }
+.pi-mediciones .content-card { margin-bottom: .85rem; }
+
+@media (max-width: 760px) {
+  .app .main, .pi-contenido, .app .content-card, .pi-tarjeta {
+    min-width: 0;
+  }
+  .app .content-card, .pi-mediciones .content-card { padding-inline: .85rem; }
+  .app :is(.section-actions, .promo-list-heading, .report-period-controls, .report-heading),
+  .pi-mediciones :is(.section-actions, .form-buttons) { flex-wrap: wrap; gap: .75rem; }
+  .app :is(.form-grid, .report-two-columns), .pi-mediciones .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app :is(.report-kpi-grid, .stats), .pi-mediciones .report-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  :is(.app, .pi-pantalla) :is(.table-container, .promo-table-container) {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  :is(.app, .pi-pantalla) :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 16px;
+  }
+  :is(.app, .pi-pantalla) :is(.primary-button, .cancel-button, .custom-select-trigger, .pi-boton) {
+    min-height: 44px;
+    white-space: normal;
+  }
+  :is(.app, .pi-pantalla) .calendar-popover { max-width: calc(100vw - 32px); }
+  .pi-navegacion > button { flex: 1 1 8rem; }
+}
+
+@media (max-width: 380px) {
+  .app :is(.report-kpi-grid, .stats), .pi-mediciones .report-kpi-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

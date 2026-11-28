@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 
 import './App.css'
+import './PanelMovil.css'
 import { supabase } from './supabase'
 import PanelInstructores, { PantallaAcceso } from './PanelInstructores'
 import AsistenciaAdmin from './AsistenciaAdmin'
@@ -2570,12 +2571,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
                                 {estado}
                               </span>
                             </td>
-                            <td>{promo.aplicaA === tipoPaqueteNavidad ? (
-                                <button type="button" className="cancel-button" onClick={evento => {
-                                  evento.stopPropagation()
-                                  cambiarDisponibilidadNavidad(promo.id)
-                                }}>{promo.activa === false ? 'Activar' : 'Desactivar'}</button>
-                              ) : expandida && <span className="promo-expanded-indicator">Opciones</span>}</td>
+                            <td>{expandida && <span className="promo-expanded-indicator">Opciones</span>}</td>
                           </tr>
 
                           {expandida && (
@@ -3754,7 +3750,7 @@ onChange={e => setFormulario({ ...formulario, nombre: convertirNombre(e.target.v
 
         {seccion === 'Instructores' && <GestionEmpleados />}
 
-        {seccion === 'Mediciones' && <Mediciones clientes={clientes} SelectorOpcion={SelectorOpcion} SelectorFecha={SelectorFecha} />}
+        {seccion === 'Mediciones' && <Mediciones operador={user.id} administrador clientes={clientes} SelectorOpcion={SelectorOpcion} SelectorFecha={SelectorFecha} />}
       </main>
 
       {/* MODAL DE RENOVACIÓN */}
@@ -4272,7 +4268,7 @@ function App() {
   }
 
   if (perfil.rol === 'empleado') {
-    return <PanelInstructores user={sesion.user} perfil={perfil} />
+    return <PanelInstructores user={sesion.user} perfil={perfil} SelectorOpcion={SelectorOpcion} SelectorFecha={SelectorFecha} />
   }
 
   return (

@@ -26,3 +26,14 @@
 .mediciones-guia dl { display: grid; gap: .65rem; margin-block: .75rem; }
 .mediciones-guia dt { font-weight: 700; }
 .mediciones-guia dd { margin: .2rem 0 0; }
+
+.mediciones-envio { margin-block: 1rem; }
+.mediciones-vista-ficha {
+  display: block;
+  width: min(100%, 31rem);
+  height: auto;
+  margin: 1rem auto;
+  border-radius: .75rem;
+}
+.mediciones-acciones-ficha { flex-wrap: wrap; gap: .65rem; }
+.mediciones-acciones-ficha a { text-decoration: none; }

@@ -3,6 +3,8 @@ import { Folder, Plus, Ruler, Save } from 'lucide-react'
 import { supabase } from './supabase'
 import { calcularMediciones, kgPorLibra, nivelesActividad, objetivosCalorias } from './calcularMediciones'
 import './Mediciones.css'
+import FichaMedicion from './FichaMedicion'
+import { avisarVentaRegistrada } from './CajaTurno'
 
 const circunferencias = [
   ['cuello', 'Cuello'], ['hombros', 'Hombros (contorno completo)'],
@@ -49,7 +51,7 @@ function SelectorMedicion({ SelectorOpcion, etiqueta, opciones, valor, alCambiar
   </div>
 }
 
-export default function Mediciones({ clientes, SelectorOpcion, SelectorFecha }) {
+export default function Mediciones({ clientes, SelectorOpcion, SelectorFecha, operador, administrador = false, turnoId }) {
   const [nueva, setNueva] = useState(false)
   const [persona, setPersona] = useState({ nombre: '', telefono: '' })
   const carpetaNueva = useRef(null)
@@ -64,9 +66,17 @@ export default function Mediciones({ clientes, SelectorOpcion, SelectorFecha }) 
   const [cargando, setCargando] = useState(false)
   const [errorHistorial, setErrorHistorial] = useState('')
   const [guardando, setGuardando] = useState(false)
+  const [fichaEnvio, setFichaEnvio] = useState(null)
   const [detalle, setDetalle] = useState(null)
   const enCurso = useRef(false)
-  const intento = useRef(null)
+  const clavePendiente = `zona-fitness:medicion-pendiente:${operador}`
+  const [pendiente, setPendiente] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem(clavePendiente)) } catch { return null }
+  })
+  const [metodo, setMetodo] = useState('Efectivo')
+  const [turnos, setTurnos] = useState([])
+  const [turnoElegido, setTurnoElegido] = useState(null)
+  const [errorTurnos, setErrorTurnos] = useState('')
   const perfiles = carpetas.map(fila => {
     const anterior = clientes.find(item => String(item.id) === fila.cliente_id)
     return {
@@ -118,14 +128,33 @@ export default function Mediciones({ clientes, SelectorOpcion, SelectorFecha }) 
     return () => { vigente = false }
   }, [clienteId])
 
+  useEffect(() => {
+    if (!administrador || !mostrarFicha) return
+    let vigente = true
+    async function consultarTurnos() {
+      const { data, error } = await supabase.from('turnos').select('id,numero')
+        .eq('fecha', hoy()).eq('estado', 'abierto').order('numero')
+      if (!vigente) return
+      setTurnos(data || [])
+      setErrorTurnos(error ? 'No se pudieron consultar los turnos.' : '')
+    }
+    consultarTurnos()
+    const timer = setInterval(consultarTurnos, 15000)
+    return () => { vigente = false; clearInterval(timer) }
+  }, [administrador, mostrarFicha])
+
+  const turnoActivo = administrador
+    ? turnos.find(turno => turno.id === turnoElegido)?.id ?? (turnos.length === 1 ? turnos[0].id : null)
+    : turnoId
+
   function elegir(id, iniciarNueva = false) {
-    intento.current = null
     setClienteId(id)
     setNueva(iniciarNueva)
     setPersona({ nombre: '', telefono: '' })
     carpetaNueva.current = iniciarNueva ? crypto.randomUUID() : null
     setHistorial([])
     setDetalle(null)
+    setFichaEnvio(null)
     setDatos(inicial)
     setFecha(hoy())
     setMensaje('')
@@ -134,48 +163,69 @@ export default function Mediciones({ clientes, SelectorOpcion, SelectorFecha }) 
     setCargando(Boolean(id))
   }
 
-  async function guardar(evento) {
-    evento.preventDefault()
-    if (!mostrarFicha || enCurso.current) return
-    const nombre = persona.nombre.trim().replace(/\s+/g, ' ')
-    if (nueva && (!/^[\p{L}][\p{L} .’'-]* [\p{L}][\p{L}.’'-]* [\p{L}][\p{L}.’'-]*$/u.test(nombre) || !/^\d{8}$/.test(persona.telefono))) {
-      setError('Escribe un nombre y dos apellidos, y un teléfono de 8 dígitos.')
-      return
-    }
+  async function confirmarCobro(solicitud) {
+    if (enCurso.current) return
     enCurso.current = true
     setGuardando(true)
     setError('')
     setMensaje('')
     try {
-      const carpeta = {
-        cliente_id: nueva ? carpetaNueva.current : clienteId,
-        nombre_persona: nueva ? nombre : cliente.datosGuardados ? cliente.nombre : null,
-        telefono_persona: nueva ? persona.telefono : cliente.datosGuardados ? cliente.telefono : null
+      sessionStorage.setItem(clavePendiente, JSON.stringify(solicitud))
+    } catch {
+      enCurso.current = false
+      setGuardando(false)
+      setError('Habilita el almacenamiento de esta pestaña para poder confirmar el cobro.')
+      return
+    }
+    setPendiente(solicitud)
+    try {
+      const { data, error } = await supabase.rpc('guardar_y_cobrar_medicion', solicitud)
+      if (error) {
+        if (/^(P0001|22\d{3}|23\d{3}|PGRST202)$/.test(error.code || '')) {
+          sessionStorage.removeItem(clavePendiente)
+          setPendiente(null)
+          setError(error.code === 'PGRST202' ? 'Instala el SQL de cobro de mediciones para continuar.' : error.message)
+          return
+        }
+        throw error
       }
-      const contenido = JSON.stringify({ ...carpeta, fecha, datos })
-      if (intento.current?.contenido !== contenido) intento.current = { contenido, id: crypto.randomUUID() }
-      const id = intento.current.id
-      let { data, error } = await supabase.from('mediciones_corporales')
-        .insert({ id, ...JSON.parse(contenido) }).select(estados).single()
-      if (error?.code === '23505') {
-        ({ data, error } = await supabase.from('mediciones_corporales').select(estados).eq('id', id).single())
-      }
-      if (error) throw error
-      intento.current = null
+      sessionStorage.removeItem(clavePendiente)
+      setPendiente(null)
       setHistorial(actual => [data, ...actual.filter(item => item.id !== data.id)].sort((a, b) => b.fecha.localeCompare(a.fecha)))
-      setCarpetas(actual => actual.some(item => item.cliente_id === carpeta.cliente_id) ? actual : [carpeta, ...actual])
-      if (nueva) {
+      setCarpetas(actual => actual.some(item => item.cliente_id === data.cliente_id) ? actual : [data, ...actual])
+      if (clienteId !== data.cliente_id) {
         setCargando(true)
-        setClienteId(carpeta.cliente_id)
+        setClienteId(data.cliente_id)
         setNueva(false)
       }
-      setMensaje('Medición guardada en la carpeta del cliente.')
+      setDatos(inicial)
+      setFecha(hoy())
+      setFichaEnvio({ ...data, nombre: data.nombre_persona || cliente?.nombre || 'Persona medida',
+        telefono: data.telefono_persona || cliente?.telefono })
+      setMensaje('Medición guardada y cobro de Q35 registrado.')
+      avisarVentaRegistrada(true)
     } catch {
-      setError('No se pudo confirmar el guardado. Puedes reintentar con los mismos datos.')
+      setError('No se pudo confirmar el cobro. Usa Reintentar cobro para recuperar la misma operación.')
     } finally {
       enCurso.current = false
       setGuardando(false)
     }
+  }
+
+  function guardar(evento) {
+    evento.preventDefault()
+    if (!mostrarFicha || pendiente || enCurso.current || !turnoActivo) return
+    const nombre = persona.nombre.trim().replace(/\s+/g, ' ')
+    if (nueva && (!/^[\p{L}][\p{L} .’'-]* [\p{L}][\p{L}.’'-]* [\p{L}][\p{L}.’'-]*$/u.test(nombre) || !/^\d{8}$/.test(persona.telefono))) {
+      setError('Escribe un nombre y dos apellidos, y un teléfono de 8 dígitos.')
+      return
+    }
+    confirmarCobro({
+      p_operacion: crypto.randomUUID(), p_turno: turnoActivo, p_metodo: metodo,
+      p_cliente: nueva ? carpetaNueva.current : clienteId, p_fecha: fecha, p_datos: datos,
+      p_nombre: nueva ? nombre : cliente.datosGuardados ? cliente.nombre : null,
+      p_telefono: nueva ? persona.telefono : cliente.datosGuardados ? cliente.telefono : null
+    })
   }
 
   function campo(id, etiqueta, limites = {}) {
@@ -188,11 +238,20 @@ export default function Mediciones({ clientes, SelectorOpcion, SelectorFecha }) 
   return <div className="mediciones-pagina">
     <div className="section-actions"><div><h2><Ruler size={20} /> Mediciones corporales</h2>
       <p>Registra mediciones de miembros y visitantes.</p></div>
-      {!mostrarFicha && <button type="button" className="primary-button" onClick={() => elegir('', true)}>
+      {!mostrarFicha && !pendiente && <button type="button" className="primary-button" onClick={() => elegir('', true)}>
         <Plus size={16} /> Agregar medición
       </button>}
     </div>
-    {mostrarFicha && <div className="content-card section-actions">
+    {fichaEnvio && <FichaMedicion key={fichaEnvio.id} ficha={fichaEnvio} medidas={circunferencias}
+      cerrar={() => setFichaEnvio(null)} />}
+    {pendiente && <div className="content-card">
+      <p>Medición pendiente de confirmar · Q35</p>
+      <button type="button" className="primary-button" disabled={guardando} onClick={() => confirmarCobro(pendiente)}>
+        {guardando ? 'Confirmando…' : 'Reintentar cobro'}
+      </button>
+      {error && <p role="alert">{error}</p>}
+    </div>}
+    {mostrarFicha && !pendiente && <div className="content-card section-actions">
       <strong>{nueva ? 'Medición nueva' : cliente.nombre}</strong>
       <button type="button" className="cancel-button" disabled={guardando} onClick={() => elegir('')}>Volver a carpetas</button>
     </div>}
@@ -212,7 +271,7 @@ export default function Mediciones({ clientes, SelectorOpcion, SelectorFecha }) 
       </ul>
     </div>}
 
-    {mostrarFicha && <>
+    {mostrarFicha && !pendiente && <>
       <div className="content-card form-card">
         <form className="mediciones-formulario" onSubmit={guardar}>
           {nueva && <section className="mediciones-bloque">
@@ -310,8 +369,21 @@ export default function Mediciones({ clientes, SelectorOpcion, SelectorFecha }) 
               <p>El IMC juvenil se interpreta por edad y sexo. Para estimar la grasa, completa la estatura, el sexo y la medida de cintura sobre el hueso de la cadera.</p>
             )}
           </section>
-          <div className="form-buttons"><button type="submit" className="primary-button" disabled={guardando}>
-            <Save size={16} /> {guardando ? 'Guardando…' : 'Guardar medición'}
+          <section className="mediciones-bloque">
+            <h3>Cobro de la medición</h3>
+            <div className="form-grid">
+              {administrador && <SelectorMedicion SelectorOpcion={SelectorOpcion}
+                etiqueta="Turno de caja" opciones={turnos.map(turno => ({ id: turno.id, etiqueta: `Turno ${turno.numero}` }))}
+                valor={turnoActivo} alCambiar={setTurnoElegido} />}
+              <SelectorMedicion SelectorOpcion={SelectorOpcion} etiqueta="Método de pago"
+                opciones={['Efectivo', 'Transferencia', 'Depósito', 'Tarjeta'].map(medio => ({ id: medio, etiqueta: medio }))}
+                valor={metodo} alCambiar={setMetodo} />
+            </div>
+            {errorTurnos && <p role="alert">{errorTurnos}</p>}
+            {!turnoActivo && <p>{administrador ? 'Selecciona un turno abierto de hoy para cobrar.' : 'Abre el turno en Asistencia y caja para poder cobrar.'}</p>}
+          </section>
+          <div className="form-buttons"><button type="submit" className="primary-button" disabled={guardando || !turnoActivo}>
+            <Save size={16} /> Guardar y cobrar · Q35
           </button></div>
           {mensaje && <p role="status">{mensaje}</p>}
           {error && <p role="alert">{error}</p>}
@@ -330,7 +402,11 @@ export default function Mediciones({ clientes, SelectorOpcion, SelectorFecha }) 
               <td>{mostrar(calculo.peso, 'kg', 2)}</td><td>{mostrar(calculo.imc, 'kg/m²')}</td>
               <td>{mostrar(calculo.grasa, '%')}</td>
               <td><button type="button" className="cancel-button" aria-expanded={detalle?.id === fila.id}
-                onClick={() => setDetalle(detalle?.id === fila.id ? null : fila)}>Ver medidas</button></td></tr>
+                onClick={() => setDetalle(detalle?.id === fila.id ? null : fila)}>Ver medidas</button>
+                <button type="button" className="cancel-button" onClick={() =>
+                  setFichaEnvio({ ...fila, nombre: cliente.nombre, telefono: cliente.telefono })
+                }>Compartir resultado</button>
+              </td></tr>
           })}</tbody>
         </table></div>}
         {detalle && <div className="form-grid">

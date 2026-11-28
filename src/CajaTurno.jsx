@@ -6,7 +6,8 @@ import './CajaTurno.css'
 const zona = 'America/Guatemala'
 const avisoDeVenta = 'zona-fitness:venta-registrada'
 
-function avisarVentaRegistrada() {
+export function avisarVentaRegistrada(enEstaPestana = false) {
+  if (enEstaPestana) window.dispatchEvent(new Event(avisoDeVenta))
   // Las otras pestañas solo reciben una señal. Consultan la venta con sus propios permisos.
   try {
     localStorage.setItem(avisoDeVenta, crypto.randomUUID())
@@ -28,6 +29,11 @@ const palabrasBusqueda = texto => texto.toLowerCase().normalize('NFD').replace(/
 const partes = texto => texto.trim().replace(/\s+/g, ' ')
 export const nombreVisitanteValido = /^[\p{L}][\p{L} .'’-]* [\p{L}][\p{L}.'’-]* [\p{L}][\p{L}.'’-]*$/u
 
+function capitalizarNombreVisitante(texto) {
+  return texto.replace(/(^|\s)(\p{L})/gu,
+    (_, espacio, inicial) => espacio + inicial.toLocaleUpperCase('es-GT'))
+}
+
 export function Visitante({ valor, cambiar, enAsistencia = false }) {
   const [resultados, setResultados] = useState([])
   const [error, setError] = useState('')
@@ -48,11 +54,22 @@ export function Visitante({ valor, cambiar, enAsistencia = false }) {
 
   return <div className="caja-visitante">
     <label>Nombre y dos apellidos
-      <input className={enAsistencia ? "pi-buscador" : undefined} autoFocus={enAsistencia} value={texto} maxLength={100} required placeholder="Luis Pérez García"
+      <input className={enAsistencia ? "pi-buscador" : undefined} autoFocus={enAsistencia} value={texto} maxLength={100} autoCapitalize="words" required placeholder="Luis Pérez García"
         onChange={e => {
           setResultados([])
           setError('')
-          cambiar({ nombre: e.target.value })
+          const campo = e.currentTarget
+          const original = campo.value
+          const nombre = capitalizarNombreVisitante(original)
+          if (nombre !== original) {
+            const { selectionStart, selectionEnd } = campo
+            campo.value = nombre
+            if (selectionStart !== null && selectionEnd !== null) {
+              campo.setSelectionRange(capitalizarNombreVisitante(original.slice(0, selectionStart)).length,
+                capitalizarNombreVisitante(original.slice(0, selectionEnd)).length)
+            }
+          }
+          cambiar({ nombre })
         }} />
     </label>
     {id && <small>Visitante guardado seleccionado</small>}
@@ -162,11 +179,13 @@ function HistorialCaja({ revision, soloUltima, turnoFiltro, turnos }) {
     }
     window.addEventListener('storage', recibirAviso)
     window.addEventListener('focus', leer)
+    window.addEventListener(avisoDeVenta, leer)
     return () => {
       vigente = false
       clearInterval(timer)
       window.removeEventListener('storage', recibirAviso)
       window.removeEventListener('focus', leer)
+      window.removeEventListener(avisoDeVenta, leer)
     }
   }, [revision, soloUltima])
 
